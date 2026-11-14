@@ -1,0 +1,2200 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PyMaster Indonesia — Platform Pembelajaran Python Interaktif Lengkap</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Pyodide CDN untuk menjalankan Python asli di browser -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js" defer></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    code, pre, textarea.code-editor, .font-mono {
+      font-family: 'Fira Code', monospace;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 7px; height: 7px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* Syntax Highlighting Theme */
+    .code-card {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 14px;
+      border: 1px solid #1e293b;
+      overflow: hidden;
+    }
+    .kw { color: #c084fc; font-weight: 600; }
+    .fn { color: #38bdf8; }
+    .str { color: #4ade80; }
+    .num { color: #fb923c; }
+    .cm { color: #64748b; font-style: italic; }
+    .op { color: #22d3ee; }
+
+    /* Bar transitions for sorting & searching visualizers */
+    .algo-bar {
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- TOP NAVBAR -->
+  <header class="bg-slate-900 text-white sticky top-0 z-50 border-b border-slate-800 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <!-- Mobile Menu Button -->
+        <button id="mobileMenuBtn" onclick="toggleSidebar()" class="lg:hidden p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200" aria-label="Buka Menu Modul">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-blue-600 to-cyan-500 flex items-center justify-center font-extrabold text-lg shadow-md">
+          Py
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-extrabold text-base sm:text-lg tracking-tight">Python <span class="text-cyan-400">KodeKiddo</span></h1>
+            <span id="pyRuntimeBadge" class="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> Memuat Python...
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Kurikulum Python</p>
+        </div>
+      </div>
+
+      <!-- Overall Progress -->
+      <div class="flex items-center gap-3 sm:gap-4">
+        <div class="text-right">
+          <div class="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Progres Belajar</div>
+          <div class="flex items-center gap-2">
+            <div class="w-24 sm:w-32 h-2 bg-slate-800 rounded-full overflow-hidden">
+              <div id="globalProgressBar" class="h-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <span id="globalProgressText" class="text-xs font-bold text-emerald-400">0/9</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN SHELL -->
+  <div class="flex-1 max-w-7xl w-full mx-auto flex relative">
+
+    <!-- SIDEBAR OVERLAY (MOBILE) -->
+    <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-30 hidden lg:hidden"></div>
+
+    <!-- SIDEBAR NAVIGATION -->
+    <aside id="sidebar" class="fixed lg:sticky top-[65px] left-0 z-40 w-72 h-[calc(100vh-65px)] bg-white border-r border-slate-200 flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-indigo-600">Silabus 9 Modul</span>
+          <h2 class="text-sm font-bold text-slate-800">Daftar Materi Python</h2>
+        </div>
+        <span id="totalQuizScoreBadge" class="text-xs font-bold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100">
+          Skor: 0
+        </span>
+      </div>
+
+      <nav id="moduleNavList" class="flex-1 overflow-y-auto p-3 space-y-1.5">
+        <!-- Rendered by JS -->
+      </nav>
+
+      <div class="p-3.5 border-t border-slate-100 bg-slate-50 text-xs text-slate-500">
+        <div class="font-semibold text-slate-700 mb-1">Tips Belajar Efektif:</div>
+        Baca materi, eksplorasi diagram interaktif, jalankan kode di Sandbox, lalu kerjakan kuis tiap modul!
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-8">
+      <!-- Dynamic Module Content -->
+      <div id="moduleContainer" class="space-y-8"></div>
+    </main>
+  </div>
+
+  <!-- NOTIFICATION TOAST (NO alert() USED) -->
+  <div id="toastBox" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div id="toastInner" class="bg-slate-900 text-white text-sm font-semibold px-4 py-3 rounded-xl shadow-xl border border-slate-700 flex items-center gap-2.5">
+      <span id="toastIcon">✓</span>
+      <span id="toastMessage">Berhasil!</span>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. PYODIDE & SMART FALLBACK PYTHON RUNNER
+    // =========================================================================
+    let pyodideInstance = null;
+    let pyodideReady = false;
+
+    async function initPyodideEngine() {
+      const badge = document.getElementById("pyRuntimeBadge");
+      try {
+        if (typeof loadPyodide === "function") {
+          pyodideInstance = await loadPyodide();
+          pyodideReady = true;
+          badge.className = "hidden sm:inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+          badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Python 3.11 Aktif`;
+        } else {
+          throw new Error("Pyodide script unavailable");
+        }
+      } catch (err) {
+        pyodideReady = false;
+        badge.className = "hidden sm:inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30";
+        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span> Mode Simulator Python`;
+      }
+    }
+
+    window.addEventListener("load", () => {
+      setTimeout(initPyodideEngine, 300);
+    });
+
+    async function executePythonCode(code, customInputs = []) {
+      if (pyodideReady && pyodideInstance) {
+        try {
+          const inputsJson = JSON.stringify(customInputs);
+          const wrapper = `
+import sys, io, builtins, json
+
+_stdout = io.StringIO()
+_stderr = io.StringIO()
+sys.stdout = _stdout
+sys.stderr = _stderr
+
+_inputs = json.loads(${JSON.stringify(inputsJson)})
+_input_idx = 0
+def _custom_input(prompt=""):
+    global _input_idx
+    if prompt:
+        print(prompt, end="")
+    if _input_idx < len(_inputs):
+        val = str(_inputs[_input_idx])
+        _input_idx += 1
+        print(val)
+        return val
+    return "0"
+
+builtins.input = _custom_input
+
+try:
+${code.split("\n").map(line => "    " + line).join("\n")}
+except Exception as e:
+    import traceback
+    traceback.print_exc()
+
+_out = _stdout.getvalue()
+_err = _stderr.getvalue()
+(_out, _err)
+`;
+          const res = await pyodideInstance.runPythonAsync(wrapper);
+          const out = res.get(0) || "";
+          const err = res.get(1) || "";
+          res.destroy();
+          return { output: out, error: err };
+        } catch (e) {
+          return { output: "", error: String(e) };
+        }
+      } else {
+        // Fallback lightweight simulator when offline / CDN blocked
+        return simulatePythonFallback(code, customInputs);
+      }
+    }
+
+    function simulatePythonFallback(code, customInputs) {
+      try {
+        const lines = code.split("\n");
+        let outputs = [];
+        let env = {};
+        let inputIdx = 0;
+
+        for (let raw of lines) {
+          let line = raw.trim();
+          if (!line || line.startsWith("#")) continue;
+          if (line.includes("input(")) {
+            const varName = line.split("=")[0].trim();
+            const val = customInputs[inputIdx] !== undefined ? customInputs[inputIdx++] : "10";
+            env[varName] = line.includes("int(") ? parseInt(val, 10) : line.includes("float(") ? parseFloat(val) : String(val);
+            continue;
+          }
+          const assignMatch = line.match(/^([a-zA-Z_]\w*)\s*=\s*(.+)$/);
+          if (assignMatch && !line.startsWith("print") && !line.startsWith("if") && !line.startsWith("for") && !line.startsWith("while") && !line.startsWith("def")) {
+            const [, k, expr] = assignMatch;
+            try {
+              const jsExpr = expr.replace(/\bTrue\b/g, "true").replace(/\bFalse\b/g, "false").replace(/\/\//g, "/");
+              const fn = new Function(...Object.keys(env), `return (${jsExpr});`);
+              let val = fn(...Object.values(env));
+              if (expr.includes("//") && typeof val === "number") val = Math.floor(val);
+              env[k] = val;
+            } catch (_) {
+              env[k] = expr.replace(/^["']|["']$/g, "");
+            }
+          }
+          const printMatch = line.match(/^print\((.+)\)$/);
+          if (printMatch) {
+            let inner = printMatch[1];
+            try {
+              const jsExpr = inner.replace(/\bTrue\b/g, "true").replace(/\bFalse\b/g, "false");
+              const fn = new Function(...Object.keys(env), `return [${jsExpr}];`);
+              const vals = fn(...Object.values(env));
+              outputs.push(vals.join(" "));
+            } catch (_) {
+              outputs.push(inner.replace(/^["']|["']$/g, ""));
+            }
+          }
+        }
+        return {
+          output: outputs.length ? outputs.join("\n") : "[Simulator Offline] Kode berhasil diparsing. Hubungkan internet untuk eksekusi Python penuh.",
+          error: ""
+        };
+      } catch (err) {
+        return { output: "", error: String(err) };
+      }
+    }
+
+    // =========================================================================
+    // 2. UTILITY FUNCTIONS (COPY CODE, TOAST, HTML ESCAPE)
+    // =========================================================================
+    function showToast(msg, isError = false) {
+      const box = document.getElementById("toastBox");
+      const inner = document.getElementById("toastInner");
+      const icon = document.getElementById("toastIcon");
+      const text = document.getElementById("toastMessage");
+
+      text.textContent = msg;
+      icon.textContent = isError ? "⚠" : "✓";
+      inner.className = isError
+        ? "bg-rose-950 text-rose-100 text-sm font-semibold px-4 py-3 rounded-xl shadow-xl border border-rose-700 flex items-center gap-2.5"
+        : "bg-slate-900 text-white text-sm font-semibold px-4 py-3 rounded-xl shadow-xl border border-slate-700 flex items-center gap-2.5";
+
+      box.classList.remove("translate-y-20", "opacity-0");
+      setTimeout(() => {
+        box.classList.add("translate-y-20", "opacity-0");
+      }, 2400);
+    }
+
+    function copySnippet(btnId, rawCode) {
+      const temp = document.createElement("textarea");
+      temp.value = rawCode;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand("copy");
+      document.body.removeChild(temp);
+      showToast("Kode Python disalin ke clipboard!");
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderCodeBlock(title, highlightedHTML, rawCode) {
+      const safeRaw = escapeHtml(rawCode);
+      return `
+        <div class="code-card my-4 shadow-sm">
+          <div class="bg-slate-800/90 px-4 py-2.5 flex items-center justify-between border-b border-slate-700/80">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <span class="text-xs font-mono text-slate-300 ml-2">${title}</span>
+            </div>
+            <button onclick="copySnippet(this, \`${rawCode.replace(/`/g, "\\`").replace(/\$/g, "\\$")}\`)" class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition">
+              Salin Kode
+            </button>
+          </div>
+          <pre class="p-4 text-xs sm:text-sm overflow-x-auto leading-relaxed"><code>${highlightedHTML}</code></pre>
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // 3. CURRICULUM DATA (ALL 9 MODULES FROM SYLLABUS IMAGE)
+    // =========================================================================
+    const MODULES = [
+      // -----------------------------------------------------------------------
+      // MODULE 1: BASIC PYTHON AND CONSOLE INTERACTION
+      // -----------------------------------------------------------------------
+      {
+        id: 1,
+        shortTitle: "Basic Python & Console",
+        title: "1. Basic Python and Console Interaction",
+        badge: "Fondasi Utama",
+        color: "indigo",
+        topics: [
+          "Printing", "Variables", "Types", "User Input",
+          "Converting Input Types", "Arithmetic Expressions",
+          "String Operators", "Comments"
+        ],
+        summary: "Memahami cara komputer menerima masukan (input), menyimpannya dalam variabel bertipe data tertentu, memproses operasi matematika maupun teks, serta menampilkan hasilnya ke layar.",
+        visualWidgetHTML: `
+          <div class="bg-gradient-to-br from-indigo-50 via-white to-sky-50 border border-indigo-200 rounded-2xl p-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <div>
+                <span class="text-xs font-extrabold uppercase tracking-wider text-indigo-600">Visualisasi Interaktif</span>
+                <h4 class="font-bold text-slate-900 text-base">Alur Input → Konversi Tipe → Memori Variabel → Output</h4>
+              </div>
+              <div class="flex items-center gap-2">
+                <input id="m1SimInput" type="text" value="15" class="w-24 px-3 py-1.5 text-sm font-mono border border-indigo-300 rounded-lg bg-white" placeholder="Ketik angka">
+                <button onclick="updateM1Visual()" class="px-3 py-1.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition">Simulasikan</button>
+              </div>
+            </div>
+            <svg id="m1SvgDiagram" viewBox="0 0 720 175" class="w-full bg-white rounded-xl border border-slate-200 p-2">
+              <!-- Step 1: input() -->
+              <rect x="15" y="30" width="150" height="110" rx="12" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+              <text x="90" y="55" text-anchor="middle" font-size="11" font-weight="800" fill="#1d4ed8">1. input()</text>
+              <text id="m1BoxRaw" x="90" y="85" text-anchor="middle" font-size="16" font-weight="800" font-family="Fira Code" fill="#0f172a">"15"</text>
+              <rect x="45" y="102" width="90" height="22" rx="6" fill="#dbeafe"/>
+              <text x="90" y="117" text-anchor="middle" font-size="11" font-weight="700" fill="#1e40af">type: str</text>
+
+              <!-- Arrow 1 -->
+              <line x1="168" y1="85" x2="212" y2="85" stroke="#64748b" stroke-width="2.5"/>
+              <polygon points="220,85 210,79 210,91" fill="#64748b"/>
+              <text x="194" y="75" text-anchor="middle" font-size="10" font-weight="700" fill="#475569">int()</text>
+
+              <!-- Step 2: Variable Box -->
+              <rect x="225" y="30" width="195" height="110" rx="12" fill="#f0fdf4" stroke="#22c55e" stroke-width="2"/>
+              <text x="322" y="55" text-anchor="middle" font-size="11" font-weight="800" fill="#15803d">2. Variabel: umur</text>
+              <text id="m1BoxInt" x="322" y="85" text-anchor="middle" font-size="18" font-weight="800" font-family="Fira Code" fill="#0f172a">15</text>
+              <rect x="272" y="102" width="100" height="22" rx="6" fill="#dcfce7"/>
+              <text id="m1BoxType" x="322" y="117" text-anchor="middle" font-size="11" font-weight="700" fill="#166534">type: int</text>
+
+              <!-- Arrow 2 -->
+              <line x1="423" y1="85" x2="472" y2="85" stroke="#64748b" stroke-width="2.5"/>
+              <polygon points="480,85 470,79 470,91" fill="#64748b"/>
+              <text x="451" y="75" text-anchor="middle" font-size="10" font-weight="700" fill="#475569">umur + 5</text>
+
+              <!-- Step 3: print() -->
+              <rect x="485" y="30" width="215" height="110" rx="12" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+              <text x="592" y="55" text-anchor="middle" font-size="11" font-weight="800" fill="#38bdf8">3. Console Output</text>
+              <text id="m1BoxOut" x="592" y="90" text-anchor="middle" font-size="15" font-weight="700" font-family="Fira Code" fill="#4ade80">5 thn lagi: 20</text>
+              <text x="592" y="118" text-anchor="middle" font-size="10" fill="#94a3b8">print("5 thn lagi:", umur + 5)</text>
+            </svg>
+          </div>
+        `,
+        lessonHTML: `
+          <div class="space-y-6">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">1.1 Printing & Comments (Mencetak Output & Komentar)</h3>
+              <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
+                Fungsi <code class="bg-slate-100 px-1.5 py-0.5 rounded text-indigo-700 font-semibold">print()</code> digunakan untuk menampilkan teks atau nilai ke layar konsol. Sementara itu, <strong>Comments</strong> diawali tanda pagar (<code class="bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">#</code>) dan diabaikan sepenuhnya oleh Python—sangat berguna untuk memberi catatan agar kode mudah dibaca manusia.
+              </p>
+              ${renderCodeBlock("printing_comments.py",
+`<span class="cm"># Ini adalah komentar satu baris, tidak akan dijalankan</span>
+<span class="fn">print</span>(<span class="str">"Halo, Dunia Python!"</span>)
+<span class="fn">print</span>(<span class="str">"Umur saya"</span>, <span class="num">14</span>, <span class="str">"tahun"</span>, sep=<span class="str">" - "</span>)`,
+`# Ini adalah komentar satu baris, tidak akan dijalankan
+print("Halo, Dunia Python!")
+print("Umur saya", 14, "tahun", sep=" - ")`)}
+            </div>
+
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">1.2 Variables & Data Types (Variabel & Tipe Data Dasar)</h3>
+              <p class="text-sm sm:text-base text-slate-700 leading-relaxed mb-3">
+                Bayangkan <strong>variabel</strong> sebagai sebuah kotak berlabel di memori komputer untuk menyimpan nilai. Python menentukan tipe data secara otomatis (<em>dynamic typing</em>) dan bisa diperiksa dengan fungsi <code class="bg-slate-100 px-1.5 py-0.5 rounded text-indigo-700">type()</code>:
+              </p>
+              <div class="overflow-x-auto border border-slate-200 rounded-xl">
+                <table class="w-full text-left text-xs sm:text-sm">
+                  <thead class="bg-slate-100 text-slate-700 font-bold">
+                    <tr>
+                      <th class="p-3">Tipe Data</th>
+                      <th class="p-3">Nama di Python</th>
+                      <th class="p-3">Contoh Nilai</th>
+                      <th class="p-3">Kegunaan</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-200 bg-white">
+                    <tr><td class="p-3 font-semibold">Integer</td><td class="p-3 font-mono text-indigo-600">int</td><td class="p-3 font-mono">42, -7, 2026</td><td class="p-3">Bilangan bulat tanpa koma</td></tr>
+                    <tr><td class="p-3 font-semibold">Float</td><td class="p-3 font-mono text-indigo-600">float</td><td class="p-3 font-mono">3.14, -0.5, 2.0</td><td class="p-3">Bilangan desimal / pecahan</td></tr>
+                    <tr><td class="p-3 font-semibold">String</td><td class="p-3 font-mono text-indigo-600">str</td><td class="p-3 font-mono">"PyMaster", '123'</td><td class="p-3">Teks atau kumpulan karakter</td></tr>
+                    <tr><td class="p-3 font-semibold">Boolean</td><td class="p-3 font-mono text-indigo-600">bool</td><td class="p-3 font-mono">True, False</td><td class="p-3">Nilai kebenaran logika</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">1.3 User Input & Converting Input Types (Konversi Tipe Input)</h3>
+              <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
+                <strong>Aturan Emas Python:</strong> Fungsi <code class="bg-slate-100 px-1.5 py-0.5 rounded text-indigo-700">input()</code> <strong>SELALU</strong> mengembalikan nilai bertipe <code class="font-mono text-rose-600">str</code> (String), meskipun pengguna mengetik angka! Jika ingin melakukan perhitungan matematika, Anda wajib mengubahnya memakai <code class="font-mono">int()</code> atau <code class="font-mono">float()</code>.
+              </p>
+              ${renderCodeBlock("input_casting.py",
+`nama = <span class="fn">input</span>(<span class="str">"Masukkan nama: "</span>)
+angka_str = <span class="fn">input</span>(<span class="str">"Masukkan sisi persegi: "</span>)
+sisi = <span class="fn">int</span>(angka_str)  <span class="cm"># Konversi str menjadi int</span>
+luas = sisi * sisi
+<span class="fn">print</span>(<span class="str">"Halo"</span>, nama, <span class="str">"luas persegi adalah:"</span>, luas)`,
+`nama = input("Masukkan nama: ")
+angka_str = input("Masukkan sisi persegi: ")
+sisi = int(angka_str)  # Konversi str menjadi int
+luas = sisi * sisi
+print("Halo", nama, "luas persegi adalah:", luas)`)}
+            </div>
+
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">1.4 Arithmetic Expressions & String Operators</h3>
+              <p class="text-sm sm:text-base text-slate-700 leading-relaxed mb-3">
+                Python mengikuti urutan prioritas operasi matematika (<strong>PEMDAS</strong>: Kurung → Pangkat <code class="font-mono">**</code> → Kali/Bagi/Modulo <code class="font-mono">* / // %</code> → Tambah/Kurang <code class="font-mono">+ -</code>). Selain itu, operator <code class="font-mono">+</code> dan <code class="font-mono">*</code> juga bekerja pada String!
+              </p>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs sm:text-sm">
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                  <div class="font-bold text-slate-800 mb-2">Operator Aritmatika Penting:</div>
+                  <ul class="space-y-1.5 font-mono text-slate-700">
+                    <li><span class="text-indigo-600 font-bold">7 / 2</span>  → 3.5 (Pembagian biasa/float)</li>
+                    <li><span class="text-indigo-600 font-bold">7 // 2</span> → 3 (Floor division / bagi bulat)</li>
+                    <li><span class="text-indigo-600 font-bold">7 % 2</span>  → 1 (Modulo / sisa pembagian)</li>
+                    <li><span class="text-indigo-600 font-bold">2 ** 3</span> → 8 (Perpangkatan / 2³)</li>
+                  </ul>
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                  <div class="font-bold text-slate-800 mb-2">String Operators (+ dan *):</div>
+                  <ul class="space-y-1.5 font-mono text-slate-700">
+                    <li><span class="text-emerald-700 font-bold">"Code" + "Battle"</span> → "CodeBattle"</li>
+                    <li><span class="text-emerald-700 font-bold">"Ha" * 3</span> → "HaHaHa"</li>
+                    <li><span class="text-rose-600 font-bold">"Umur: " + 15</span> → TypeError! (harus str(15))</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        `,
+        sandboxDefault: `# Coba ubah kode di bawah dan klik Jalankan Kode!
+panjang = 12
+lebar = 5
+luas = panjang * lebar
+keliling = 2 * (panjang + lebar)
+
+print("Luas Persegi Panjang:", luas)
+print("Keliling:", keliling)
+print("Garis Pembatas: " + "=" * 15)
+print("Sisa bagi 17 % 5 adalah:", 17 % 5)`,
+        challenge: {
+          instruction: "Buat variabel <code>harga = 25000</code> dan <code>jumlah = 4</code>, lalu cetak total harganya (<code>100000</code>) menggunakan <code>print()</code>.",
+          starter: `harga = 25000\njumlah = 4\n# Hitung total dan cetak di bawah ini\n`,
+          expectedOutput: "100000"
+        },
+        quiz: [
+          {
+            q: "Apa hasil dari ekspresi Python: 6 + 2 * 5 // 3 ?",
+            options: ["13", "9", "9.33", "10"],
+            ans: 1,
+            exp: "Perkalian dan pembagian bulat dikerjakan lebih dulu: 2 * 5 = 10, lalu 10 // 3 = 3, kemudian 6 + 3 = 9."
+          },
+          {
+            q: "Tipe data apa yang selalu dikembalikan oleh fungsi input() di Python?",
+            options: ["int", "float", "str", "bool"],
+            ans: 2,
+            exp: "Fungsi input() selalu mengembalikan string (str), sehingga perlu dikonversi dengan int() atau float() jika ingin dihitung."
+          },
+          {
+            q: "Apa output dari: print('Py' * 3 + '!') ?",
+            options: ["Py3!", "PyPyPy!", "Error", "Py * 3!"],
+            ans: 1,
+            exp: "Operator * pada string mengulang teks sebanyak n kali ('PyPyPy'), lalu + menggabungkannya dengan '!'."
+          }
+        ]
+      },
+
+      // -----------------------------------------------------------------------
+      // MODULE 2: CONDITIONALS
+      // -----------------------------------------------------------------------
+      {
+        id: 2,
+        shortTitle: "Conditionals & Logika",
+        title: "2. Conditionals (Percabangan & Logika Boolean)",
+        badge: "Pengambilan Keputusan",
+        color: "sky",
+        topics: [
+          "If Statements", "Boolean Values", "Logical Operators",
+          "Comparison Operators", "Floating Point Numbers and 'Equality'"
+        ],
+        summary: "Mengajarkan program mengambil keputusan cerdas berdasarkan kondisi tertentu menggunakan operator perbandingan, gerbang logika (and, or, not), serta memahami jebakan presisi angka desimal (floating point).",
+        visualWidgetHTML: `
+          <div class="bg-gradient-to-br from-sky-50 via-white to-indigo-50 border border-sky-200 rounded-2xl p-5">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div>
+                <span class="text-xs font-extrabold uppercase tracking-wider text-sky-600">Simulator Flowchart Interaktif</span>
+                <h4 class="font-bold text-slate-900 text-base">Jalur Eksekusi if - elif - else</h4>
+              </div>
+              <div class="flex items-center gap-2">
+                <label class="text-xs font-bold text-slate-600">Nilai Ujian:</label>
+                <input id="m2ScoreSlider" type="range" min="0" max="100" value="82" oninput="updateM2Visual()" class="accent-sky-600">
+                <span id="m2ScoreVal" class="font-mono font-bold text-sm px-2.5 py-0.5 rounded bg-sky-600 text-white">82</span>
+              </div>
+            </div>
+            <svg viewBox="0 0 720 160" class="w-full bg-white rounded-xl border border-slate-200 p-2">
+              <!-- Node 1: nilai >= 85 -->
+              <rect id="m2Node1" x="20" y="25" width="190" height="48" rx="10" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+              <text x="115" y="46" text-anchor="middle" font-size="11" font-weight="800" fill="#0f172a">if nilai >= 85:</text>
+              <text id="m2Res1" x="115" y="63" text-anchor="middle" font-size="11" font-weight="700" fill="#64748b">Predikat: A</text>
+
+              <!-- Node 2: nilai >= 70 -->
+              <rect id="m2Node2" x="265" y="25" width="190" height="48" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="2.5"/>
+              <text x="360" y="46" text-anchor="middle" font-size="11" font-weight="800" fill="#0f172a">elif nilai >= 70:</text>
+              <text id="m2Res2" x="360" y="63" text-anchor="middle" font-size="11" font-weight="800" fill="#15803d">Predikat: B (AKTIF)</text>
+
+              <!-- Node 3: else -->
+              <rect id="m2Node3" x="510" y="25" width="190" height="48" rx="10" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+              <text x="605" y="46" text-anchor="middle" font-size="11" font-weight="800" fill="#0f172a">else:</text>
+              <text id="m2Res3" x="605" y="63" text-anchor="middle" font-size="11" font-weight="700" fill="#64748b">Predikat: C</text>
+
+              <line x1="210" y1="49" x2="265" y2="49" stroke="#94a3b8" stroke-width="2" stroke-dasharray="4,3"/>
+              <line x1="455" y1="49" x2="510" y2="49" stroke="#94a3b8" stroke-width="2" stroke-dasharray="4,3"/>
+
+              <rect x="20" y="95" width="680" height="45" rx="10" fill="#0f172a"/>
+              <text id="m2ExplainBar" x="360" y="122" text-anchor="middle" font-size="12" font-weight="600" fill="#38bdf8">
+                82 >= 85 (False) → lanjut cek elif 82 >= 70 (True) → Eksekusi blok B & lewati else!
+              </text>
+            </svg>
+          </div>
+        `,
+        lessonHTML: `
+          <div class="space-y-6">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">2.1 Comparison & Logical Operators</h3>
+              <p class="text-sm sm:text-base text-slate-700 leading-relaxed mb-3">
+                Operator perbandingan membandingkan dua nilai dan menghasilkan tipe Boolean (<code class="font-mono text-indigo-600">True</code> atau <code class="font-mono text-rose-600">False</code>). Operator logika (<code class="font-mono">and</code>, <code class="font-mono">or</code>, <code class="font-mono">not</code>) menggabungkan beberapa kondisi sekaligus.
+              </p>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs sm:text-sm">
+                <div class="bg-white border border-slate-200 rounded-xl p-4">
+                  <div class="font-bold text-slate-800 mb-2">Comparison Operators:</div>
+                  <ul class="space-y-1 font-mono text-slate-700">
+                    <li><b>==</b> : Sama dengan (hati-hati, bukan = )</li>
+                    <li><b>!=</b> : Tidak sama dengan</li>
+                    <li><b>&gt; , &lt;</b> : Lebih besar / Lebih kecil</li>
+                    <li><b>&gt;= , &lt;=</b> : Lebih besar/kecil atau sama dengan</li>
+                  </ul>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-xl p-4">
+                  <div class="font-bold text-slate-800 mb-2">Logical Operators:</div>
+                  <ul class="space-y-1 text-slate-700">
+                    <li><code class="font-mono font-bold text-indigo-600">A and B</code> : True hanya jika <b>keduanya</b> True.</li>
+                    <li><code class="font-mono font-bold text-indigo-600">A or B</code> : True jika <b>minimal satu</b> True.</li>
+                    <li><code class="font-mono font-bold text-indigo-600">not A</code> : Membalik nilai True menjadi False.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">2.2 Struktur if - elif - else & Urutan Pengecekan</h3>
+              <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
+                Python mengecek kondisi dari atas ke bawah. Begitu menemukan satu kondisi yang bernilai <code class="font-mono">True</code>, Python menjalankan blok yang menjorok ke dalam (<strong>indentasi 4 spasi</strong>) dan <strong>mengabaikan seluruh sisa elif/else di bawahnya</strong>.
+              </p>
+              ${renderCodeBlock("conditionals.py",
+`suhu = <span class="num">32</span>
+hujan = <span class="kw">False</span>
+
+<span class="kw">if</span> suhu > <span class="num">30</span> <span class="kw">and not</span> hujan:
+    <span class="fn">print</span>(<span class="str">"Cuaca cerah terik, bawa topi!"</span>)
+<span class="kw">elif</span> hujan:
+    <span class="fn">print</span>(<span class="str">"Sedia payung sebelum hujan."</span>)
+<span class="kw">else</span>:
+    <span class="fn">print</span>(<span class="str">"Cuaca sejuk dan nyaman."</span>)`,
+`suhu = 32
+hujan = False
+
+if suhu > 30 and not hujan:
+    print("Cuaca cerah terik, bawa topi!")
+elif hujan:
+    print("Sedia payung sebelum hujan.")
+else:
+    print("Cuaca sejuk dan nyaman.")`)}
+            </div>
+
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">2.3 Floating Point Numbers and "Equality"</h3>
+              <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
+                Komputer menyimpan angka desimal dalam format biner (IEEE 754). Akibatnya, <code class="font-mono bg-rose-50 text-rose-700 px-1.5 py-0.5 rounded">0.1 + 0.2</code> di Python menghasilkan <code class="font-mono">0.30000000000000004</code>! Karena itu, membandingkan float langsung dengan <code class="font-mono">==</code> bisa bernilai <code class="font-mono">False</code>. Solusinya gunakan <code class="font-mono text-indigo-700">round(x, 2)</code> atau <code class="font-mono text-indigo-700">math.isclose()</code>.
+              </p>
+              ${renderCodeBlock("float_equality.py",
+`x = <span class="num">0.1</span> + <span class="num">0.2</span>
+<span class="fn">print</span>(<span class="str">"Nilai asli x:"</span>, x)
+<span class="fn">print</span>(<span class="str">"x == 0.3 :"</span>, x == <span class="num">0.3</span>)            <span class="cm"># False!</span>
+<span class="fn">print</span>(<span class="str">"round(x, 1) == 0.3 :"</span>, <span class="fn">round</span>(x, <span class="num">1</span>) == <span class="num">0.3</span>)  <span class="cm"># True!</span>`,
+`x = 0.1 + 0.2
+print("Nilai asli x:", x)
+print("x == 0.3 :", x == 0.3)            # False!
+print("round(x, 1) == 0.3 :", round(x, 1) == 0.3)  # True!`)}
+            </div>
+          </div>
+        `,
+        sandboxDefault: `x = 0.1 + 0.2
+print("Hasil 0.1 + 0.2 =", x)
+print("Apakah x == 0.3?", x == 0.3)
+print("Dengan round(x, 1) == 0.3:", round(x, 1) == 0.3)
+
+nilai = 88
+if nilai >= 85:
+    print("Lulus dengan Predikat A")
+else:
+    print("Terus semangat belajar!")`,
+        challenge: {
+          instruction: "Diberikan <code>angka = 17</code>. Gunakan <code>if-else</code> dan operator modulo <code>%</code> untuk mencetak <code>Ganjil</code> jika angka ganjil, atau <code>Genap</code> jika genap.",
+          starter: `angka = 17\n# Tulis percabangan if-else di bawah ini\n`,
+          expectedOutput: "Ganjil"
+        },
+        quiz: [
+          {
+            q: "Jika A = False, B = True, C = True, apa hasil dari: A and (B or C) ?",
+            options: ["True", "False", "None", "Error"],
+            ans: 1,
+            exp: "B or C bernilai True. Namun False and True selalu menghasilkan False."
+          },
+          {
+            q: "Mengapa ekspresi (0.1 + 0.2) == 0.3 menghasilkan False di Python?",
+            options: [
+              "Karena bug pada operator ==",
+              "Karena representasi biner floating-point menghasilkan 0.30000000000000004",
+              "Karena 0.1 dan 0.2 bertipe integer",
+              "Karena harus memakai tanda ="
+            ],
+            ans: 1,
+            exp: "Pecahan desimal tertentu tidak memiliki representasi biner persis sehingga terjadi pembulatan mikroskopis di memori."
+          },
+          {
+            q: "Jika umur = 15, apa output dari: if umur < 30: print('A') elif umur < 19: print('B') ?",
+            options: ["A", "B", "A dan B", "Tidak mencetak apa pun"],
+            ans: 0,
+            exp: "Kondisi pertama (15 < 30) sudah True, sehingga Python langsung mencetak 'A' dan tidak mengecek elif berikutnya."
+          }
+        ]
+      },
+
+      // -----------------------------------------------------------------------
+      // MODULE 3: LOOPING
+      // -----------------------------------------------------------------------
+      {
+        id: 3,
+        shortTitle: "Looping (Perulangan)",
+        title: "3. Looping (While, For, Break, Continue & Nested Loops)",
+        badge: "Otomatisasi Proses",
+        color: "emerald",
+        topics: [
+          "While Loops", "For Loops", "Break and Continue", "Nested Control Structures"
+        ],
+        summary: "Mengulang blok kode secara otomatis tanpa menulis ulang perintah yang sama berkali-kali, mengendalikan alur lompatan loop dengan break/continue, hingga membuat pola 2 dimensi dengan perulangan bersarang.",
+        visualWidgetHTML: `
+          <div class="bg-gradient-to-br from-emerald-50 via-white to-teal-50 border border-emerald-200 rounded-2xl p-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div>
+                <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-600">Visualisasi Alur Loop</span>
+                <h4 class="font-bold text-slate-900 text-base">Perbedaan <code>continue</code> vs <code>break</code> pada <code>for i in range(1, 7)</code></h4>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="setLoopMode('normal')" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-800 text-white">Normal</button>
+                <button onclick="setLoopMode('continue')" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-amber-600 text-white">continue (i==3)</button>
+                <button onclick="setLoopMode('break')" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-rose-600 text-white">break (i==4)</button>
+              </div>
+            </div>
+            <div id="m3LoopBoxes" class="grid grid-cols-6 gap-2 my-3"></div>
+            <p id="m3LoopCaption" class="text-xs sm:text-sm font-medium text-slate-700 bg-white p-3 rounded-xl border border-slate-200"></p>
+          </div>
+        `,
+        lessonHTML: `
+          <div class="space-y-6">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">3.1 For Loops & Fungsi range()</h3>
+              <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
+                <code class="font-mono text-indigo-700">for</code> loop sangat ideal ketika jumlah perulangan sudah diketahui. Fungsi <code class="font-mono">range(start, stop, step)</code> menghasilkan deret angka dimulai dari <code class="font-mono">start</code> hingga <strong>sebelum</strong> <code class="font-mono">stop</code> (<code class="font-mono">stop - 1</code>).
+              </p>
+              ${renderCodeBlock("for_loop.py",
+`<span class="cm"># Mencetak angka 1 sampai 5 (stop=6 tidak ikut)</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, <span class="num">6</span>):
+    <span class="fn">print</span>(<span class="str">"Iterasi ke-"</span>, i)
+
+<span class="cm"># Menghitung mundur dengan step negatif</span>
+<span class="kw">for</span> hitung <span class="kw">in</span> <span class="fn">range</span>(<span class="num">3</span>, <span class="num">0</span>, -<span class="num">1</span>):
+    <span class="fn">print</span>(hitung)
+<span class="fn">print</span>(<span class="str">"Meluncur!"</span>)`,
+`# Mencetak angka 1 sampai 5 (stop=6 tidak ikut)
+for i in range(1, 6):
+    print("Iterasi ke-", i)
+
+# Menghitung mundur dengan step negatif
+for hitung in range(3, 0, -1):
+    print(hitung)
+print("Meluncur!")`)}
+            </div>
+
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">3.2 While Loops (Perulangan Berbasis Kondisi)</h3>
+              <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
+                <code class="font-mono text-indigo-700">while</code> loop terus mengulang selama kondisinya bernilai <code class="font-mono">True</code>. Pastikan selalu ada perubahan variabel di dalam loop agar tidak terjadi <em>Infinite Loop</em> (perulangan tanpa henti).
+              </p>
+              ${renderCodeBlock("while_loop.py",
+`energi = <span class="num">100</span>
+hari = <span class="num">0</span>
+<span class="kw">while</span> energi > <span class="num">0</span>:
+    hari += <span class="num">1</span>
+    energi -= <span class="num">35</span>
+<span class="fn">print</span>(<span class="str">"Energi habis pada hari ke-"</span>, hari)`,
+`energi = 100
+hari = 0
+while energi > 0:
+    hari += 1
+    energi -= 35
+print("Energi habis pada hari ke-", hari)`)}
+            </div>
+
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">3.3 Break, Continue & Nested Control Structures</h3>
+              <ul class="list-disc pl-5 text-sm sm:text-base text-slate-700 space-y-1.5 mb-3">
+                <li><code class="font-mono font-bold text-rose-600">break</code>: Menghentikan perulangan secara paksa dan langsung keluar dari loop.</li>
+                <li><code class="font-mono font-bold text-amber-600">continue</code>: Melewati sisa perintah pada putaran saat ini dan langsung lanjut ke putaran berikutnya.</li>
+                <li><strong>Nested Control Structures</strong>: Loop di dalam loop (atau <code class="font-mono">if</code> di dalam loop), umum dipakai untuk membuat matriks atau pola segitiga bintang.</li>
+              </ul>
+              ${renderCodeBlock("nested_loop.py",
+`<span class="cm"># Membuat pola segitiga siku-siku 4 baris</span>
+<span class="kw">for</span> baris <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, <span class="num">5</span>):
+    teks = <span class="str">""</span>
+    <span class="kw">for</span> kolom <span class="kw">in</span> <span class="fn">range</span>(baris):
+        teks += <span class="str">"* "</span>
+    <span class="fn">print</span>(teks)`,
+`# Membuat pola segitiga siku-siku 4 baris
+for baris in range(1, 5):
+    teks = ""
+    for kolom in range(baris):
+        teks += "* "
+    print(teks)`)}
+            </div>
+          </div>
+        `,
+        sandboxDefault: `total = 0
+for angka in range(1, 11):
+    if angka % 2 == 1:
+        continue  # Lewati bilangan ganjil
+    total += angka
+
+print("Jumlah bilangan genap 1..10 adalah:", total)`,
+        challenge: {
+          instruction: "Gunakan <code>for</code> loop dan <code>range()</code> untuk menghitung dan mencetak jumlah seluruh angka dari <code>1</code> sampai <code>5</code> (hasil harus <code>15</code>).",
+          starter: `jumlah = 0\n# Lengkapi loop di bawah ini untuk menjumlahkan 1 sampai 5\n\nprint(jumlah)`,
+          expectedOutput: "15"
+        },
+        quiz: [
+          {
+            q: "Angka apa saja yang dihasilkan oleh range(2, 9, 2) ?",
+            options: ["2, 4, 6, 8", "2, 4, 6, 8, 9", "2, 3, 4, 5, 6, 7, 8", "0, 2, 4, 6, 8"],
+            ans: 0,
+            exp: "Dimulai dari 2, bertambah 2 setiap langkah, dan berhenti sebelum 9 sehingga menghasilkan 2, 4, 6, 8."
+          },
+          {
+            q: "Apa fungsi pernyataan 'continue' di dalam perulangan?",
+            options: [
+              "Menghentikan seluruh program",
+              "Keluar dari loop sepenuhnya",
+              "Melewati sisa kode pada iterasi saat ini dan lanjut ke iterasi berikutnya",
+              "Mengulang iterasi dari awal"
+            ],
+            ans: 2,
+            exp: "continue melompati sisa blok kode di iterasi berjalan dan langsung menuju pengecekan iterasi berikutnya."
+          },
+          {
+            q: "Berapa kali kata 'Hi' dicetak oleh: for i in range(3): for j in range(2): print('Hi') ?",
+            options: ["3 kali", "5 kali", "6 kali", "2 kali"],
+            ans: 2,
+            exp: "Nested loop mengalikan jumlah iterasi luar (3) dengan iterasi dalam (2) = 6 kali."
+          }
+        ]
+      },
+
+      // -----------------------------------------------------------------------
+      // MODULE 4: FUNCTIONS AND EXCEPTIONS
+      // -----------------------------------------------------------------------
+      {
+        id: 4,
+        shortTitle: "Functions & Exceptions",
+        title: "4. Functions and Exceptions (Fungsi, Scope & Penanganan Error)",
+        badge: "Kode Modular",
+        color: "purple",
+        topics: [
+          "Functions", "Namespaces", "Parameters", "Return Values", "Exceptions"
+        ],
+        summary: "Membungkus logika program ke dalam fungsi yang dapat dipakai ulang, memahami ruang lingkup variabel lokal vs global (Namespaces), serta mencegah program crash saat terjadi error menggunakan try-except.",
+        visualWidgetHTML: `
+          <div class="bg-gradient-to-br from-purple-50 via-white to-indigo-50 border border-purple-200 rounded-2xl p-5">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-purple-600">Diagram Mesin Fungsi & Namespace</span>
+            <h4 class="font-bold text-slate-900 text-base mb-3">Bagaimana Parameter Masuk & Return Value Keluar</h4>
+            <svg viewBox="0 0 720 170" class="w-full bg-white rounded-xl border border-slate-200 p-2">
+              <!-- Global Scope -->
+              <rect x="15" y="15" width="185" height="140" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
+              <text x="107" y="38" text-anchor="middle" font-size="11" font-weight="800" fill="#334155">Global Namespace</text>
+              <text x="107" y="68" text-anchor="middle" font-size="12" font-family="Fira Code" fill="#0f172a">skor = 80</text>
+              <text x="107" y="95" text-anchor="middle" font-size="11" font-family="Fira Code" fill="#4f46e5">hasil = bonus(skor)</text>
+              <text x="107" y="130" text-anchor="middle" font-size="12" font-weight="800" font-family="Fira Code" fill="#15803d">hasil → 90</text>
+
+              <!-- Arrow In -->
+              <line x1="200" y1="65" x2="255" y2="65" stroke="#7c3aed" stroke-width="2.5"/>
+              <polygon points="263,65 253,59 253,71" fill="#7c3aed"/>
+              <text x="231" y="55" text-anchor="middle" font-size="10" font-weight="700" fill="#6d28d9">Argumen: 80</text>
+
+              <!-- Function Box (Local Namespace) -->
+              <rect x="268" y="20" width="215" height="130" rx="14" fill="#f3e8ff" stroke="#9333ea" stroke-width="2.5"/>
+              <text x="375" y="43" text-anchor="middle" font-size="12" font-weight="800" fill="#6b21a8">def bonus(nilai):</text>
+              <text x="375" y="62" text-anchor="middle" font-size="10" font-weight="700" fill="#7e22ce">[Local Namespace]</text>
+              <text x="375" y="88" text-anchor="middle" font-size="12" font-family="Fira Code" fill="#1e1b4b">total = nilai + 10</text>
+              <text x="375" y="116" text-anchor="middle" font-size="12" font-weight="800" font-family="Fira Code" fill="#be185d">return total</text>
+
+              <!-- Arrow Out -->
+              <line x1="483" y1="112" x2="540" y2="112" stroke="#16a34a" stroke-width="2.5"/>
+              <polygon points="548,112 538,106 538,118" fill="#16a34a"/>
+              <text x="515" y="102" text-anchor="middle" font-size="10" font-weight="700" fill="#15803d">Return: 90</text>
+
+              <!-- Try-Except Guard -->
+              <rect x="553" y="25" width="150" height="120" rx="12" fill="#fff1f2" stroke="#f43f5e" stroke-width="2"/>
+              <text x="628" y="48" text-anchor="middle" font-size="11" font-weight="800" fill="#be123c">Exception Guard</text>
+              <text x="628" y="75" text-anchor="middle" font-size="11" font-family="Fira Code" fill="#0f172a">try: 10 / 0</text>
+              <text x="628" y="100" text-anchor="middle" font-size="11" font-family="Fira Code" fill="#e11d48">except:</text>
+              <text x="628" y="122" text-anchor="middle" font-size="10" font-weight="700" fill="#881337">Program Tetap Aman!</text>
+            </svg>
+          </div>
+        `,
+        lessonHTML: `
+          <div class="space-y-6">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">4.1 Functions, Parameters & Return Values</h3>
+              <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
+                Fungsi didefinisikan dengan kata kunci <code class="font-mono text-indigo-700 font-bold">def</code>. <strong>Parameter</strong> adalah variabel penerima masukan di definisi fungsi, sedangkan <strong>Return Value</strong> (<code class="font-mono">return</code>) mengirimkan hasil perhitungan kembali ke pemanggil fungsi (berbeda dengan <code class="font-mono">print()</code> yang hanya menampilkan teks tanpa mengembalikan nilai).
+              </p>
+              ${renderCodeBlock("functions_demo.py",
+`<span class="kw">def</span> <span class="fn">hitung_diskon</span>(harga, persen=<span class="num">10</span>):  <span class="cm"># persen punya nilai default 10</span>
+    potongan = harga * (persen / <span class="num">100</span>)
+    <span class="kw">return</span> harga - potongan
+
+bayar = <span class="fn">hitung_diskon</span>(<span class="num">50000</span>, <span class="num">20</span>)
+<span class="fn">print</span>(<span class="str">"Total bayar:"</span>, bayar)`,
+`def hitung_diskon(harga, persen=10):  # persen punya nilai default 10
+    potongan = harga * (persen / 100)
+    return harga - potongan
+
+bayar = hitung_diskon(50000, 20)
+print("Total bayar:", bayar)`)}
+            </div>
+
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">4.2 Namespaces (Local vs Global Scope)</h3>
+              <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
+                <strong>Namespace / Scope</strong> mengatur di mana sebuah variabel dapat dikenali. Variabel yang dibuat di dalam fungsi bersifat <strong>Lokal</strong>—hanya hidup selama fungsi berjalan dan tidak dapat diakses dari luar fungsi.
+              </p>
+            </div>
+
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">4.3 Exceptions (Penanganan Error dengan try - except)</h3>
+              <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
+                Kesalahan saat program berjalan (seperti pembagian dengan nol <code class="font-mono">ZeroDivisionError</code> atau salah konversi teks <code class="font-mono">ValueError</code>) disebut <strong>Exception</strong>. Blok <code class="font-mono text-indigo-700">try...except</code> menangkap error tersebut agar program tidak berhenti mendadak.
+              </p>
+              ${renderCodeBlock("exceptions_demo.py",
+`<span class="kw">def</span> <span class="fn">bagi_aman</span>(a, b):
+    <span class="kw">try</span>:
+        <span class="kw">return</span> a / b
+    <span class="kw">except</span> ZeroDivisionError:
+        <span class="kw">return</span> <span class="str">"Error: Tidak bisa membagi dengan nol!"</span>
+
+<span class="fn">print</span>(<span class="fn">bagi_aman</span>(<span class="num">20</span>, <span class="num">4</span>))
+<span class="fn">print</span>(<span class="fn">bagi_aman</span>(<span class="num">20</span>, <span class="num">0</span>))`,
+`def bagi_aman(a, b):
+    try:
+        return a / b
+    except ZeroDivisionError:
+        return "Error: Tidak bisa membagi dengan nol!"
+
+print(bagi_aman(20, 4))
+print(bagi_aman(20, 0))`)}
+            </div>
+          </div>
+        `,
+        sandboxDefault: `def luas_segitiga(alas, tinggi):
+    return 0.5 * alas * tinggi
+
+print("Luas 1:", luas_segitiga(10, 6))
+print("Luas 2:", luas_segitiga(8, 5))
+
+try:
+    angka = int("bukan_angka")
+except ValueError:
+    print("Tertangkap ValueError: Input bukan angka valid!")`,
+        challenge: {
+          instruction: "Buat fungsi bernama <code>kuadrat(n)</code> yang mengembalikan nilai <code>n * n</code>, lalu cetak hasil pemanggilan <code>kuadrat(9)</code> (hasil harus <code>81</code>).",
+          starter: `def kuadrat(n):\n    # Kembalikan n pangkat 2\n    pass\n\nprint(kuadrat(9))`,
+          expectedOutput: "81"
+        },
+        quiz: [
+          {
+            q: "Apa yang dikembalikan oleh sebuah fungsi Python jika tidak memiliki pernyataan 'return'?",
+            options: ["0", "False", "None", "Error"],
+            ans: 2,
+            exp: "Secara default, fungsi tanpa return akan mengembalikan nilai khusus None."
+          },
+          {
+            q: "Exception apa yang muncul jika menjalankan int('Halo')?",
+            options: ["ZeroDivisionError", "ValueError", "IndexError", "NameError"],
+            ans: 1,
+            exp: "ValueError terjadi karena tipe argumennya benar (str), tetapi isi nilainya tidak bisa diubah menjadi integer."
+          },
+          {
+            q: "Variabel yang dibuat di dalam tubuh fungsi disebut memiliki ruang lingkup...",
+            options: ["Global Namespace", "Local Namespace", "Universal Scope", "Built-in Scope"],
+            ans: 1,
+            exp: "Variabel di dalam fungsi berada pada Local Namespace dan hanya eksis selama fungsi dieksekusi."
+          }
+        ]
+      },
+
+      // -----------------------------------------------------------------------
+      // MODULE 5: STRINGS
+      // -----------------------------------------------------------------------
+      {
+        id: 5,
+        shortTitle: "Strings & Slicing",
+        title: "5. Strings (Indexing, Slicing, Iterasi & String Methods)",
+        badge: "Manipulasi Teks",
+        color: "amber",
+        topics: [
+          "Indexing and Slicing", "Math Operators on Strings",
+          "For Loops Over a String", "String Methods"
+        ],
+        summary: "Menguasai teknik membedah teks per karakter menggunakan indeks positif dan negatif, memotong substring dengan slicing [start:stop:step], melakukan iterasi karakter, serta memakai metode bawaan String.",
+        visualWidgetHTML: `
+          <div class="bg-gradient-to-br from-amber-50 via-white to-orange-50 border border-amber-200 rounded-2xl p-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div>
+                <span class="text-xs font-extrabold uppercase tracking-wider text-amber-600">Visualisasi String Indexing & Slicing</span>
+                <h4 class="font-bold text-slate-900 text-base">Teks: <code>"CODEBATTLE"</code> (Panjang = 10 karakter)</h4>
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                <button onclick="highlightSlice(0, 4)" class="px-2.5 py-1 text-xs font-mono font-bold bg-amber-600 text-white rounded-lg">s[0:4]</button>
+                <button onclick="highlightSlice(4, 10)" class="px-2.5 py-1 text-xs font-mono font-bold bg-indigo-600 text-white rounded-lg">s[4:]</button>
+                <button onclick="highlightSlice(7, 10)" class="px-2.5 py-1 text-xs font-mono font-bold bg-emerald-600 text-white rounded-lg">s[-3:]</button>
+                <button onclick="highlightSlice(0, 10)" class="px-2.5 py-1 text-xs font-mono font-bold bg-slate-700 text-white rounded-lg">Reset</button>
+              </div>
+            </div>
+            <div id="m5StringBoxes" class="grid grid-cols-10 gap-1.5 my-3 text-center"></div>
+            <div id="m5SliceResult" class="text-xs sm:text-sm font-mono font-bold text-slate-800 bg-white p-3 rounded-xl border border-amber-200">
+              s[0:10] → "CODEBATTLE"
+            </div>
+          </div>
+        `,
+        lessonHTML: `
+          <div class="space-y-6">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">5.1 Indexing dan Slicing String</h3>
+              <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
+                Setiap karakter dalam String memiliki nomor posisi (<strong>index</strong>) yang dimulai dari <code class="font-mono font-bold text-indigo-600">0</code> dari kiri, atau <code class="font-mono font-bold text-rose-600">-1</code> dari kanan. <strong>Slicing</strong> <code class="font-mono">s[start:stop]</code> mengambil potongan teks dari <code class="font-mono">start</code> sampai <code class="font-mono">stop - 1</code>. String bersifat <strong>Immutable</strong> (karakternya tidak bisa diubah langsung di tempat).
+              </p>
+              ${renderCodeBlock("string_slicing.py",
+`kata = <span class="str">"CODEBATTLE"</span>
+<span class="fn">print</span>(kata[<span class="num">0</span>])      <span class="cm"># 'C' (karakter pertama)</span>
+<span class="fn">print</span>(kata[-<span class="num">1</span>])     <span class="cm"># 'E' (karakter terakhir)</span>
+<span class="fn">print</span>(kata[<span class="num">0</span>:<span class="num">4</span>])    <span class="cm"># 'CODE'</span>
+<span class="fn">print</span>(kata[::-<span class="num">1</span>])   <span class="cm"># 'ELTTABEDOC' (membalik string!)</span>`,
+`kata = "CODEBATTLE"
+print(kata[0])      # 'C' (karakter pertama)
+print(kata[-1])     # 'E' (karakter terakhir)
+print(kata[0:4])    # 'CODE'
+print(kata[::-1])   # 'ELTTABEDOC' (membalik string!)`)}
+            </div>
+
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">5.2 For Loops Over a String & String Methods</h3>
+              <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
+                Kita bisa menelusuri tiap huruf pada string memakai <code class="font-mono">for huruf in teks:</code> serta menggunakan berbagai metode bawaan seperti <code class="font-mono">.upper()</code>, <code class="font-mono">.lower()</code>, <code class="font-mono">.replace()</code>, <code class="font-mono">.count()</code>, dan <code class="font-mono">.find()</code>.
+              </p>
+              ${renderCodeBlock("string_methods.py",
+`kalimat = <span class="str">"Belajar Python Seru"</span>
+<span class="fn">print</span>(kalimat.upper())
+<span class="fn">print</span>(kalimat.replace(<span class="str">"Seru"</span>, <span class="str">"Asyik"</span>))
+
+vokal = <span class="num">0</span>
+<span class="kw">for</span> ch <span class="kw">in</span> kalimat.lower():
+    <span class="kw">if</span> ch <span class="kw">in</span> <span class="str">"aiueo"</span>:
+        vokal += <span class="num">1</span>
+<span class="fn">print</span>(<span class="str">"Jumlah huruf vokal:"</span>, vokal)`,
+`kalimat = "Belajar Python Seru"
+print(kalimat.upper())
+print(kalimat.replace("Seru", "Asyik"))
+
+vokal = 0
+for ch in kalimat.lower():
+    if ch in "aiueo":
+        vokal += 1
+print("Jumlah huruf vokal:", vokal)`)}
+            </div>
+          </div>
+        `,
+        sandboxDefault: `teks = "Informatika"
+print("Huruf awal:", teks[0], "| Huruf akhir:", teks[-1])
+print("Potongan [0:6]:", teks[0:6])
+print("Dibalik:", teks[::-1])
+print("Jumlah huruf 'a':", teks.count("a"))`,
+        challenge: {
+          instruction: "Diberikan <code>kata = 'PYTHON'</code>. Gunakan slicing untuk mencetak 3 huruf terakhirnya yaitu <code>HON</code>.",
+          starter: `kata = "PYTHON"\n# Cetak 3 huruf terakhir menggunakan slicing\n`,
+          expectedOutput: "HON"
+        },
+        quiz: [
+          {
+            q: "Jika s = 'PYTHON', apa hasil dari s[1:4] ?",
+            options: ["'PYT'", "'YTH'", "'YTHO'", "'THON'"],
+            ans: 1,
+            exp: "Indeks 1 adalah 'Y', indeks 2 adalah 'T', indeks 3 adalah 'H' (indeks 4 tidak disertakan)."
+          },
+          {
+            q: "Bagaimana cara tercepat membalikkan string s di Python?",
+            options: ["s.reverse()", "s[::-1]", "s[-1:0]", "reverse(s)"],
+            ans: 1,
+            exp: "Slicing dengan step -1 (s[::-1]) membaca seluruh karakter dari belakang ke depan."
+          },
+          {
+            q: "Apa output dari 'banana'.count('na') ?",
+            options: ["1", "2", "3", "4"],
+            ans: 1,
+            exp: "Substring 'na' muncul sebanyak 2 kali di dalam kata 'banana'."
+          }
+        ]
+      },
+
+      // -----------------------------------------------------------------------
+      // MODULE 6: LIST
+      // -----------------------------------------------------------------------
+      {
+        id: 6,
+        shortTitle: "List & Koleksi Data",
+        title: "6. List (Membuat, Mengakses, Menambah, Menghapus & Iterasi)",
+        badge: "Struktur Data",
+        color: "teal",
+        topics: [
+          "Creating, accessing, adding, removing",
+          "Strings as list",
+          "Using list in loops"
+        ],
+        summary: "Menyimpan banyak data terurut dalam satu variabel List yang bersifat Mutable (dapat diubah isinya), mengonversi antara String dan List, serta memproses koleksi data menggunakan perulangan.",
+        visualWidgetHTML: `
+          <div class="bg-gradient-to-br from-teal-50 via-white to-emerald-50 border border-teal-200 rounded-2xl p-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div>
+                <span class="text-xs font-extrabold uppercase tracking-wider text-teal-600">Simulator List Interaktif</span>
+                <h4 class="font-bold text-slate-900 text-base">Manipulasi Array / List Python Secara Langsung</h4>
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                <button onclick="m6ListAction('append')" class="px-2.5 py-1 text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white rounded-lg">.append(99)</button>
+                <button onclick="m6ListAction('insert')" class="px-2.5 py-1 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">.insert(1, 50)</button>
+                <button onclick="m6ListAction('pop')" class="px-2.5 py-1 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-lg">.pop()</button>
+                <button onclick="m6ListAction('reset')" class="px-2.5 py-1 text-xs font-bold bg-slate-700 hover:bg-slate-800 text-white rounded-lg">Reset</button>
+              </div>
+            </div>
+            <div id="m6ListVisual" class="flex flex-wrap gap-2.5 my-3"></div>
+            <div id="m6ListLog" class="text-xs font-mono text-slate-700 bg-white p-2.5 rounded-xl border border-teal-200">
+              nilai = [10, 25, 40, 75] | len(nilai) = 4
+            </div>
+          </div>
+        `,
+        lessonHTML: `
+          <div class="space-y-6">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">6.1 Creating, Accessing, Adding & Removing Elements</h3>
+              <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
+                <strong>List</strong> ditulis menggunakan kurung siku <code class="font-mono font-bold text-indigo-600">[ ]</code>. Tidak seperti String, List bersifat <strong>Mutable</strong> sehingga elemennya bisa diubah, ditambah, maupun dihapus:
+              </p>
+              ${renderCodeBlock("list_ops.py",
+`buah = [<span class="str">"Apel"</span>, <span class="str">"Jeruk"</span>, <span class="str">"Mangga"</span>]
+buah[<span class="num">1</span>] = <span class="str">"Anggur"</span>          <span class="cm"># Mengubah elemen indeks 1</span>
+buah.append(<span class="str">"Melon"</span>)      <span class="cm"># Menambah di posisi paling belakang</span>
+buah.insert(<span class="num">0</span>, <span class="str">"Kiwi"</span>)    <span class="cm"># Menyisipkan di indeks 0</span>
+buah.remove(<span class="str">"Mangga"</span>)     <span class="cm"># Menghapus berdasarkan nilai</span>
+terakhir = buah.pop()     <span class="cm"># Menghapus & mengambil elemen terakhir</span>
+<span class="fn">print</span>(buah)`,
+`buah = ["Apel", "Jeruk", "Mangga"]
+buah[1] = "Anggur"          # Mengubah elemen indeks 1
+buah.append("Melon")      # Menambah di posisi paling belakang
+buah.insert(0, "Kiwi")    # Menyisipkan di indeks 0
+buah.remove("Mangga")     # Menghapus berdasarkan nilai
+terakhir = buah.pop()     # Menghapus & mengambil elemen terakhir
+print(buah)`)}
+            </div>
+
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">6.2 Strings as List & Using List in Loops</h3>
+              <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
+                String dapat dipecah menjadi List kata menggunakan <code class="font-mono">.split()</code> atau daftar karakter dengan <code class="font-mono">list(teks)</code>, dan digabung kembali memakai <code class="font-mono">.join()</code>. Menggabungkan List dengan <code class="font-mono">for</code> loop memudahkan perhitungan total, rata-rata, maupun pencarian nilai maksimum.
+              </p>
+              ${renderCodeBlock("list_loops.py",
+`kalimat = <span class="str">"Python itu sangat fleksibel"</span>
+daftar_kata = kalimat.split(<span class="str">" "</span>)
+<span class="fn">print</span>(<span class="str">"List kata:"</span>, daftar_kata)
+
+skor = [<span class="num">78</span>, <span class="num">92</span>, <span class="num">85</span>, <span class="num">96</span>]
+total = <span class="num">0</span>
+<span class="kw">for</span> s <span class="kw">in</span> skor:
+    total += s
+<span class="fn">print</span>(<span class="str">"Rata-rata:"</span>, total / <span class="fn">len</span>(skor))`,
+`kalimat = "Python itu sangat fleksibel"
+daftar_kata = kalimat.split(" ")
+print("List kata:", daftar_kata)
+
+skor = [78, 92, 85, 96]
+total = 0
+for s in skor:
+    total += s
+print("Rata-rata:", total / len(skor))`)}
+            </div>
+          </div>
+        `,
+        sandboxDefault: `angka = [12, 7, 24, 19, 30, 5]
+genap = []
+
+for x in angka:
+    if x % 2 == 0:
+        genap.append(x)
+
+print("Semua angka:", angka)
+print("Angka genap saja:", genap)
+print("Jumlah elemen genap:", len(genap))`,
+        challenge: {
+          instruction: "Diberikan <code>data = [4, 8, 12]</code>. Tambahkan angka <code>16</code> menggunakan <code>.append()</code>, lalu cetak <code>sum(data)</code> (hasil harus <code>40</code>).",
+          starter: `data = [4, 8, 12]\n# Tambahkan 16 ke data, lalu cetak sum(data)\n`,
+          expectedOutput: "40"
+        },
+        quiz: [
+          {
+            q: "Metode List mana yang menambahkan elemen baru ke bagian paling akhir List?",
+            options: [".add()", ".push()", ".append()", ".extend_one()"],
+            ans: 2,
+            exp: "Metode .append(item) menambahkan satu elemen baru di akhir List."
+          },
+          {
+            q: "Apa hasil dari 'a-b-c'.split('-') ?",
+            options: ["'abc'", "['a', 'b', 'c']", "('a', 'b', 'c')", "['a-b-c']"],
+            ans: 1,
+            exp: "Metode .split('-') memecah string pada setiap tanda '-' dan mengembalikan List ['a', 'b', 'c']."
+          },
+          {
+            q: "Jika nums = [10, 20, 30, 40], apa hasil dari nums.pop(1) ?",
+            options: ["Menghapus dan mengembalikan 10", "Menghapus dan mengembalikan 20", "Menghapus dan mengembalikan 40", "Error"],
+            ans: 1,
+            exp: "nums.pop(1) menghapus elemen pada indeks ke-1 (yaitu 20) dan mengembalikan nilainya."
+          }
+        ]
+      },
+
+      // -----------------------------------------------------------------------
+      // MODULE 7: RECURSION
+      // -----------------------------------------------------------------------
+      {
+        id: 7,
+        shortTitle: "Recursion (Rekursi)",
+        title: "7. Recursion (Konsep Rekursi, Fungsi Matematis & Prosedur Rekursif)",
+        badge: "Berpikir Algoritmik",
+        color: "rose",
+        topics: [
+          "The concept of recursion",
+          "Mathematical functions of recursion",
+          "Simple recursion procedure"
+        ],
+        summary: "Memecahkan masalah besar dengan cara memanggil fungsi itu sendiri untuk versi masalah yang lebih kecil hingga mencapai titik berhenti (Base Case).",
+        visualWidgetHTML: `
+          <div class="bg-gradient-to-br from-rose-50 via-white to-amber-50 border border-rose-200 rounded-2xl p-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div>
+                <span class="text-xs font-extrabold uppercase tracking-wider text-rose-600">Call Stack Visualizer</span>
+                <h4 class="font-bold text-slate-900 text-base">Simulasi Panggilan Rekursif <code>faktorial(n)</code></h4>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-slate-600">Pilih n:</span>
+                ${[3, 4, 5].map(n => `<button onclick="renderRecursionStack(${n})" class="px-3 py-1 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-700 text-white">n = ${n}</button>`).join("")}
+              </div>
+            </div>
+            <div id="m7StackContainer" class="space-y-2 my-3"></div>
+          </div>
+        `,
+        lessonHTML: `
+          <div class="space-y-6">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">7.1 Dua Syarat Mutlak Rekursi (Base Case & Recursive Case)</h3>
+              <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
+                <strong>Rekursi</strong> adalah teknik saat sebuah fungsi memanggil dirinya sendiri. Agar tidak memanggil dirinya selamanya (<em>RecursionError / Stack Overflow</em>), setiap fungsi rekursif wajib memiliki:
+              </p>
+              <ul class="list-disc pl-5 text-sm sm:text-base text-slate-700 space-y-1 mt-2">
+                <li><strong>Base Case (Kasus Dasar):</strong> Kondisi berhenti ketika masalah sudah cukup kecil untuk langsung dijawab.</li>
+                <li><strong>Recursive Case (Kasus Rekursif):</strong> Bagian fungsi yang memperkecil masalah dan memanggil dirinya sendiri menuju Base Case.</li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">7.2 Mathematical Functions & Simple Recursion Procedure</h3>
+              <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
+                Contoh klasik fungsi matematis rekursif adalah <strong>Faktorial</strong> (<code class="font-mono">n! = n × (n-1)!</code> dengan <code class="font-mono">0! = 1</code>) dan deret <strong>Fibonacci</strong> (<code class="font-mono">F(n) = F(n-1) + F(n-2)</code>).
+              </p>
+              ${renderCodeBlock("recursion_examples.py",
+`<span class="kw">def</span> <span class="fn">faktorial</span>(n):
+    <span class="kw">if</span> n <= <span class="num">1</span>:          <span class="cm"># Base Case</span>
+        <span class="kw">return</span> <span class="num">1</span>
+    <span class="kw">return</span> n * <span class="fn">faktorial</span>(n - <span class="num">1</span>)  <span class="cm"># Recursive Case</span>
+
+<span class="kw">def</span> <span class="fn">fibonacci</span>(n):
+    <span class="kw">if</span> n <= <span class="num">1</span>:
+        <span class="kw">return</span> n
+    <span class="kw">return</span> <span class="fn">fibonacci</span>(n - <span class="num">1</span>) + <span class="fn">fibonacci</span>(n - <span class="num">2</span>)
+
+<span class="fn">print</span>(<span class="str">"5! ="</span>, <span class="fn">faktorial</span>(<span class="num">5</span>))
+<span class="fn">print</span>(<span class="str">"Fibonacci ke-6 ="</span>, <span class="fn">fibonacci</span>(<span class="num">6</span>))`,
+`def faktorial(n):
+    if n <= 1:          # Base Case
+        return 1
+    return n * faktorial(n - 1)  # Recursive Case
+
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n - 1) + fibonacci(n - 2)
+
+print("5! =", faktorial(5))
+print("Fibonacci ke-6 =", fibonacci(6))`)}
+            </div>
+          </div>
+        `,
+        sandboxDefault: `def hitung_mundur(n):
+    if n == 0:
+        print("Selesai!")
+        return
+    print("Angka:", n)
+    hitung_mundur(n - 1)
+
+hitung_mundur(4)`,
+        challenge: {
+          instruction: "Lengkapi fungsi rekursif <code>jumlah_rekursif(n)</code> untuk menjumlahkan <code>1 + 2 + ... + n</code>, lalu cetak hasil <code>jumlah_rekursif(6)</code> (hasil harus <code>21</code>).",
+          starter: `def jumlah_rekursif(n):\n    if n <= 1:\n        return n\n    # Tulis baris return rekursif di bawah ini\n\nprint(jumlah_rekursif(6))`,
+          expectedOutput: "21"
+        },
+        quiz: [
+          {
+            q: "Apa yang terjadi jika fungsi rekursif tidak memiliki Base Case?",
+            options: [
+              "Fungsi mengembalikan 0",
+              "Fungsi berjalan satu kali lalu berhenti",
+              "Terjadi RecursionError karena pemanggilan tanpa henti",
+              "Python otomatis menambahkan return"
+            ],
+            ans: 2,
+            exp: "Tanpa Base Case, fungsi memanggil dirinya terus-menerus hingga batas maksimum tumpukan memori (RecursionError)."
+          },
+          {
+            q: "Berapa nilai dari faktorial(4) ?",
+            options: ["10", "16", "24", "12"],
+            ans: 2,
+            exp: "4! = 4 × 3 × 2 × 1 = 24."
+          },
+          {
+            q: "Pada deret Fibonacci dengan F(0)=0, F(1)=1, F(n)=F(n-1)+F(n-2), berapa nilai F(5)?",
+            options: ["3", "5", "8", "13"],
+            ans: 1,
+            exp: "F(0)=0, F(1)=1, F(2)=1, F(3)=2, F(4)=3, F(5)=5."
+          }
+        ]
+      },
+
+      // -----------------------------------------------------------------------
+      // MODULE 8: SORTING ALGORITHMS
+      // -----------------------------------------------------------------------
+      {
+        id: 8,
+        shortTitle: "Sorting Algorithms",
+        title: "8. Sorting Algorithms (Bubble Sort, Insertion Sort & Merge Sort)",
+        badge: "Algoritma Pengurutan",
+        color: "blue",
+        topics: [
+          "Bubble Sort", "Insertion Sort", "Merge Sort"
+        ],
+        summary: "Memahami cara kerja tiga algoritma pengurutan data paling fundamental dalam ilmu komputer, mulai dari pendekatan pertukaran sederhana hingga strategi Divide and Conquer yang sangat cepat.",
+        visualWidgetHTML: `
+          <div class="bg-gradient-to-br from-blue-50 via-white to-indigo-50 border border-blue-200 rounded-2xl p-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div>
+                <span class="text-xs font-extrabold uppercase tracking-wider text-blue-600">Visualizer Step-by-Step Sorting</span>
+                <h4 class="font-bold text-slate-900 text-base">Amati Bagaimana Array Diurutkan</h4>
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                <select id="m8AlgoSelect" onchange="resetSortViz()" class="px-2.5 py-1.5 text-xs font-bold border border-blue-300 rounded-lg bg-white text-slate-800">
+                  <option value="bubble">Bubble Sort O(n²)</option>
+                  <option value="insertion">Insertion Sort O(n²)</option>
+                  <option value="merge">Merge Sort O(n log n)</option>
+                </select>
+                <button onclick="stepSortViz()" class="px-3 py-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Langkah Berikutnya →</button>
+                <button onclick="resetSortViz()" class="px-3 py-1.5 text-xs font-bold bg-slate-700 hover:bg-slate-800 text-white rounded-lg">Acak Ulang</button>
+              </div>
+            </div>
+            <div id="m8BarsContainer" class="h-40 flex items-end justify-center gap-3 bg-white rounded-xl border border-slate-200 p-4 my-3"></div>
+            <div id="m8SortStatus" class="text-xs sm:text-sm font-medium text-slate-700 bg-white p-3 rounded-xl border border-blue-100">
+              Klik "Langkah Berikutnya" untuk melihat proses pengurutan!
+            </div>
+          </div>
+        `,
+        lessonHTML: `
+          <div class="space-y-6">
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+              <table class="w-full text-left text-xs sm:text-sm">
+                <thead class="bg-slate-100 text-slate-700 font-bold">
+                  <tr>
+                    <th class="p-3">Algoritma</th>
+                    <th class="p-3">Konsep Utama</th>
+                    <th class="p-3">Kompleksitas Waktu</th>
+                    <th class="p-3">Karakteristik</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 bg-white">
+                  <tr><td class="p-3 font-bold text-blue-700">Bubble Sort</td><td class="p-3">Bandingkan dua elemen bersebelahan dan tukar jika salah urutan</td><td class="p-3 font-mono">O(n²)</td><td class="p-3">Sederhana, elemen terbesar "mengapung" ke kanan tiap putaran</td></tr>
+                  <tr><td class="p-3 font-bold text-indigo-700">Insertion Sort</td><td class="p-3">Ambil satu kartu lalu sisipkan ke posisi tepat di bagian kiri yang sudah terurut</td><td class="p-3 font-mono">O(n²) / Best O(n)</td><td class="p-3">Sangat cepat untuk data yang hampir terurut</td></tr>
+                  <tr><td class="p-3 font-bold text-emerald-700">Merge Sort</td><td class="p-3"><b>Divide & Conquer</b>: Belah dua terus-menerus lalu gabungkan sambil mengurutkan</td><td class="p-3 font-mono">O(n log n)</td><td class="p-3">Stabil dan sangat cepat untuk data berukuran besar</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">Implementasi Python: Bubble, Insertion & Merge Sort</h3>
+              ${renderCodeBlock("sorting_algorithms.py",
+`<span class="kw">def</span> <span class="fn">bubble_sort</span>(arr):
+    n = <span class="fn">len</span>(arr)
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(n):
+        <span class="kw">for</span> j <span class="kw">in</span> <span class="fn">range</span>(<span class="num">0</span>, n - i - <span class="num">1</span>):
+            <span class="kw">if</span> arr[j] > arr[j + <span class="num">1</span>]:
+                arr[j], arr[j + <span class="num">1</span>] = arr[j + <span class="num">1</span>], arr[j]
+    <span class="kw">return</span> arr
+
+<span class="kw">def</span> <span class="fn">insertion_sort</span>(arr):
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, <span class="fn">len</span>(arr)):
+        key = arr[i]
+        j = i - <span class="num">1</span>
+        <span class="kw">while</span> j >= <span class="num">0</span> <span class="kw">and</span> key < arr[j]:
+            arr[j + <span class="num">1</span>] = arr[j]
+            j -= <span class="num">1</span>
+        arr[j + <span class="num">1</span>] = key
+    <span class="kw">return</span> arr
+
+<span class="kw">def</span> <span class="fn">merge_sort</span>(arr):
+    <span class="kw">if</span> <span class="fn">len</span>(arr) <= <span class="num">1</span>:
+        <span class="kw">return</span> arr
+    mid = <span class="fn">len</span>(arr) // <span class="num">2</span>
+    kiri = <span class="fn">merge_sort</span>(arr[:mid])
+    kanan = <span class="fn">merge_sort</span>(arr[mid:])
+    hasil = []
+    i = j = <span class="num">0</span>
+    <span class="kw">while</span> i < <span class="fn">len</span>(kiri) <span class="kw">and</span> j < <span class="fn">len</span>(kanan):
+        <span class="kw">if</span> kiri[i] < kanan[j]:
+            hasil.append(kiri[i]); i += <span class="num">1</span>
+        <span class="kw">else</span>:
+            hasil.append(kanan[j]); j += <span class="num">1</span>
+    hasil.extend(kiri[i:])
+    hasil.extend(kanan[j:])
+    <span class="kw">return</span> hasil`,
+`def bubble_sort(arr):
+    n = len(arr)
+    for i in range(n):
+        for j in range(0, n - i - 1):
+            if arr[j] > arr[j + 1]:
+                arr[j], arr[j + 1] = arr[j + 1], arr[j]
+    return arr
+
+def insertion_sort(arr):
+    for i in range(1, len(arr)):
+        key = arr[i]
+        j = i - 1
+        while j >= 0 and key < arr[j]:
+            arr[j + 1] = arr[j]
+            j -= 1
+        arr[j + 1] = key
+    return arr
+
+def merge_sort(arr):
+    if len(arr) <= 1:
+        return arr
+    mid = len(arr) // 2
+    kiri = merge_sort(arr[:mid])
+    kanan = merge_sort(arr[mid:])
+    hasil = []
+    i = j = 0
+    while i < len(kiri) and j < len(kanan):
+        if kiri[i] < kanan[j]:
+            hasil.append(kiri[i]); i += 1
+        else:
+            hasil.append(kanan[j]); j += 1
+    hasil.extend(kiri[i:])
+    hasil.extend(kanan[j:])
+    return hasil`)}
+            </div>
+          </div>
+        `,
+        sandboxDefault: `def bubble_sort(arr):
+    n = len(arr)
+    for i in range(n):
+        for j in range(0, n - i - 1):
+            if arr[j] > arr[j + 1]:
+                arr[j], arr[j + 1] = arr[j + 1], arr[j]
+    return arr
+
+data = [64, 25, 12, 22, 11]
+print("Sebelum urut:", data)
+print("Sesudah Bubble Sort:", bubble_sort(data))`,
+        challenge: {
+          instruction: "Urutkan list <code>angka = [9, 3, 7, 1, 5]</code> secara menaik (ascending) menggunakan algoritma sort buatan sendiri atau fungsi <code>sorted()</code>, lalu cetak hasilnya (<code>[1, 3, 5, 7, 9]</code>).",
+          starter: `angka = [9, 3, 7, 1, 5]\n# Urutkan angka dan cetak\n`,
+          expectedOutput: "[1, 3, 5, 7, 9]"
+        },
+        quiz: [
+          {
+            q: "Algoritma sorting manakah yang menggunakan pendekatan Divide and Conquer dengan kompleksitas O(n log n)?",
+            options: ["Bubble Sort", "Insertion Sort", "Merge Sort", "Selection Sort"],
+            ans: 2,
+            exp: "Merge Sort membelah array menjadi dua bagian secara rekursif lalu menggabungkannya secara terurut dalam waktu O(n log n)."
+          },
+          {
+            q: "Pada Bubble Sort untuk list [5, 1, 4, 2], bagaimana isi list setelah 1 putaran penuh (pass pertama) selesai?",
+            options: ["[1, 5, 4, 2]", "[1, 4, 2, 5]", "[1, 2, 4, 5]", "[5, 4, 2, 1]"],
+            ans: 1,
+            exp: "Angka terbesar (5) bertukar terus ke kanan hingga menempati posisi paling akhir: [1, 4, 2, 5]."
+          },
+          {
+            q: "Algoritma manakah yang cara kerjanya mirip seperti menyusun kartu remi di tangan satu per satu?",
+            options: ["Merge Sort", "Insertion Sort", "Bubble Sort", "Linear Sort"],
+            ans: 1,
+            exp: "Insertion Sort mengambil satu elemen baru dan menyisipkannya ke posisi yang tepat di antara elemen-elemen sebelumnya yang sudah terurut."
+          }
+        ]
+      },
+
+      // -----------------------------------------------------------------------
+      // MODULE 9: SEARCHING ALGORITHMS
+      // -----------------------------------------------------------------------
+      {
+        id: 9,
+        shortTitle: "Searching Algorithms",
+        title: "9. Searching Algorithms (Linear Search & Binary Search)",
+        badge: "Algoritma Pencarian",
+        color: "cyan",
+        topics: [
+          "Linear Search", "Binary Search"
+        ],
+        summary: "Membandingkan efisiensi pencarian berurutan (Linear Search) terhadap pencarian bagi-dua super cepat (Binary Search) pada kumpulan data terurut.",
+        visualWidgetHTML: `
+          <div class="bg-gradient-to-br from-cyan-50 via-white to-sky-50 border border-cyan-200 rounded-2xl p-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div>
+                <span class="text-xs font-extrabold uppercase tracking-wider text-cyan-700">Arena Perbandingan Pencarian</span>
+                <h4 class="font-bold text-slate-900 text-base">Linear Search vs Binary Search pada Array Terurut</h4>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <label class="text-xs font-bold text-slate-700">Target:</label>
+                <select id="m9TargetSelect" onchange="runSearchViz()" class="px-2.5 py-1.5 text-xs font-mono font-bold border border-cyan-300 rounded-lg bg-white">
+                  ${[5, 12, 19, 24, 31, 38, 45, 52, 67, 74, 88, 95].map(v => `<option value="${v}" ${v === 74 ? "selected" : ""}>${v}</option>`).join("")}
+                </select>
+                <button onclick="runSearchViz()" class="px-3 py-1.5 text-xs font-bold bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg">Bandingkan Langkah</button>
+              </div>
+            </div>
+            <div id="m9SearchBoxes" class="grid grid-cols-6 sm:grid-cols-12 gap-1.5 my-3 text-center"></div>
+            <div id="m9SearchStats" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm"></div>
+          </div>
+        `,
+        lessonHTML: `
+          <div class="space-y-6">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">9.1 Linear Search (Pencarian Berurutan)</h3>
+              <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
+                <strong>Linear Search</strong> memeriksa elemen satu per satu dari indeks <code class="font-mono">0</code> sampai akhir. Kelebihannya: <strong>data tidak perlu diurutkan terlebih dahulu</strong>. Kekurangannya: jika ada 1 juta data dan target berada di ujung kanan, butuh 1 juta langkah (<code class="font-mono font-bold">O(n)</code>).
+              </p>
+            </div>
+
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">9.2 Binary Search (Pencarian Bagi-Dua)</h3>
+              <p class="text-sm sm:text-base text-slate-700 leading-relaxed">
+                <strong>Binary Search</strong> jauh lebih cepat (<code class="font-mono font-bold text-emerald-700">O(log n)</code>), tetapi memiliki <strong>syarat mutlak: data harus sudah dalam keadaan TERURUT</strong>! Caranya dengan selalu mengecek elemen tengah (<code class="font-mono">mid</code>): jika target lebih kecil, buang seluruh separuh kanan; jika target lebih besar, buang seluruh separuh kiri.
+              </p>
+              ${renderCodeBlock("searching_algorithms.py",
+`<span class="kw">def</span> <span class="fn">linear_search</span>(arr, target):
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="fn">len</span>(arr)):
+        <span class="kw">if</span> arr[i] == target:
+            <span class="kw">return</span> i
+    <span class="kw">return</span> -<span class="num">1</span>
+
+<span class="kw">def</span> <span class="fn">binary_search</span>(arr, target):
+    low = <span class="num">0</span>
+    high = <span class="fn">len</span>(arr) - <span class="num">1</span>
+    <span class="kw">while</span> low <= high:
+        mid = (low + high) // <span class="num">2</span>
+        <span class="kw">if</span> arr[mid] == target:
+            <span class="kw">return</span> mid
+        <span class="kw">elif</span> arr[mid] < target:
+            low = mid + <span class="num">1</span>
+        <span class="kw">else</span>:
+            high = mid - <span class="num">1</span>
+    <span class="kw">return</span> -<span class="num">1</span>
+
+data = [<span class="num">10</span>, <span class="num">23</span>, <span class="num">35</span>, <span class="num">47</span>, <span class="num">59</span>, <span class="num">72</span>, <span class="num">88</span>]
+<span class="fn">print</span>(<span class="str">"Index 72 (Binary):"</span>, <span class="fn">binary_search</span>(data, <span class="num">72</span>))`,
+`def linear_search(arr, target):
+    for i in range(len(arr)):
+        if arr[i] == target:
+            return i
+    return -1
+
+def binary_search(arr, target):
+    low = 0
+    high = len(arr) - 1
+    while low <= high:
+        mid = (low + high) // 2
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] < target:
+            low = mid + 1
+        else:
+            high = mid - 1
+    return -1
+
+data = [10, 23, 35, 47, 59, 72, 88]
+print("Index 72 (Binary):", binary_search(data, 72))`)}
+            </div>
+          </div>
+        `,
+        sandboxDefault: `def binary_search(arr, target):
+    low, high = 0, len(arr) - 1
+    langkah = 0
+    while low <= high:
+        langkah += 1
+        mid = (low + high) // 2
+        if arr[mid] == target:
+            return mid, langkah
+        elif arr[mid] < target:
+            low = mid + 1
+        else:
+            high = mid - 1
+    return -1, langkah
+
+angka = [3, 8, 14, 21, 29, 34, 42, 55, 68, 79, 91]
+idx, step = binary_search(angka, 79)
+print(f"Angka 79 ditemukan di indeks {idx} hanya dalam {step} langkah!")`,
+        challenge: {
+          instruction: "Implementasikan pencarian untuk menemukan indeks angka <code>40</code> di dalam <code>daftar = [10, 20, 30, 40, 50]</code> dan cetak indeksnya (hasil harus <code>3</code>).",
+          starter: `daftar = [10, 20, 30, 40, 50]\ntarget = 40\n# Temukan dan cetak indeks target (3)\n`,
+          expectedOutput: "3"
+        },
+        quiz: [
+          {
+            q: "Apa syarat wajib sebelum dapat menggunakan algoritma Binary Search?",
+            options: [
+              "Jumlah elemen harus genap",
+              "Data dalam list harus sudah terurut (sorted)",
+              "Data tidak boleh memiliki angka negatif",
+              "List harus berisi tipe data string"
+            ],
+            ans: 1,
+            exp: "Binary Search mengandalkan perbandingan nilai tengah untuk membuang separuh ruang pencarian, sehingga data wajib terurut."
+          },
+          {
+            q: "Jika terdapat 1.024 data terurut, maksimal berapa langkah perbandingan yang dibutuhkan Binary Search?",
+            options: ["512 langkah", "100 langkah", "10 atau 11 langkah (O(log₂ n))", "1.024 langkah"],
+            ans: 2,
+            exp: "Karena 2¹⁰ = 1024, Binary Search hanya memerlukan sekitar log₂(1024) + 1 = 11 langkah!"
+          },
+          {
+            q: "Kapan Linear Search lebih tepat digunakan daripada Binary Search?",
+            options: [
+              "Ketika data berjumlah jutaan dan sudah terurut",
+              "Ketika data tidak terurut dan hanya dicari sekali saja",
+              "Ketika mencari angka terbesar di list terurut",
+              "Linear Search selalu lebih cepat"
+            ],
+            ans: 1,
+            exp: "Jika data acak dan hanya dicari sekali, melakukan Linear Search O(n) lebih cepat daripada mengurutkan data dulu O(n log n)."
+          }
+        ]
+      }
+    ];
+
+    // =========================================================================
+    // 4. APPLICATION STATE & RENDERING
+    // =========================================================================
+    let activeModuleId = 1;
+    let completedModules = new Set();
+    let quizAnswersState = {}; // { "modId_qIdx": selectedOptIdx }
+    let challengeCompleted = {}; // { modId: true }
+
+    function toggleSidebar() {
+      const sb = document.getElementById("sidebar");
+      const ov = document.getElementById("sidebarOverlay");
+      const isHidden = sb.classList.contains("-translate-x-full");
+      if (isHidden) {
+        sb.classList.remove("-translate-x-full");
+        ov.classList.remove("hidden");
+      } else {
+        sb.classList.add("-translate-x-full");
+        ov.classList.add("hidden");
+      }
+    }
+
+    function updateGlobalStats() {
+      const totalScore = Object.entries(quizAnswersState).reduce((acc, [key, chosen]) => {
+        const [mId, qIdx] = key.split("_").map(Number);
+        const mod = MODULES.find(m => m.id === mId);
+        if (mod && mod.quiz[qIdx] && mod.quiz[qIdx].ans === chosen) return acc + 10;
+        return acc;
+      }, 0) + Object.keys(challengeCompleted).length * 20;
+
+      document.getElementById("totalQuizScoreBadge").textContent = `Skor: ${totalScore}`;
+      document.getElementById("globalProgressText").textContent = `${completedModules.size}/9`;
+      document.getElementById("globalProgressBar").style.width = `${Math.round((completedModules.size / 9) * 100)}%`;
+    }
+
+    function renderSidebar() {
+      const nav = document.getElementById("moduleNavList");
+      nav.innerHTML = MODULES.map(m => {
+        const isActive = m.id === activeModuleId;
+        const isDone = completedModules.has(m.id);
+        return `
+          <button onclick="selectModule(${m.id})" class="w-full text-left px-3 py-2.5 rounded-xl flex items-center justify-between gap-2 transition ${
+            isActive
+              ? "bg-indigo-600 text-white shadow-sm"
+              : "hover:bg-slate-100 text-slate-700"
+          }">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="w-6 h-6 rounded-lg text-xs font-extrabold flex items-center justify-center shrink-0 ${
+                isActive ? "bg-white/20 text-white" : isDone ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700"
+              }">
+                ${isDone ? "✓" : m.id}
+              </span>
+              <span class="text-xs sm:text-sm font-semibold truncate">${m.shortTitle}</span>
+            </div>
+            ${isDone ? `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded ${isActive ? "bg-white/20 text-white" : "bg-emerald-50 text-emerald-700"}">Selesai</span>` : ""}
+          </button>
+        `;
+      }).join("");
+    }
+
+    function selectModule(id) {
+      activeModuleId = id;
+      renderSidebar();
+      renderActiveModule();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      // Close mobile sidebar if open
+      const sb = document.getElementById("sidebar");
+      if (!sb.classList.contains("-translate-x-full") && window.innerWidth < 1024) {
+        toggleSidebar();
+      }
+    }
+
+    function markModuleComplete(id) {
+      if (completedModules.has(id)) {
+        completedModules.delete(id);
+        showToast("Status modul ditandai belum selesai.");
+      } else {
+        completedModules.add(id);
+        showToast(`Modul ${id} ditandai selesai!`);
+      }
+      updateGlobalStats();
+      renderSidebar();
+      renderActiveModule();
+    }
+
+    function renderActiveModule() {
+      const m = MODULES.find(item => item.id === activeModuleId);
+      const container = document.getElementById("moduleContainer");
+      const isDone = completedModules.has(m.id);
+
+      const quizHTML = m.quiz.map((qObj, qIdx) => {
+        const key = `${m.id}_${qIdx}`;
+        const chosen = quizAnswersState[key];
+        const hasAnswered = chosen !== undefined;
+        const isCorrect = chosen === qObj.ans;
+
+        return `
+          <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5 space-y-3">
+            <div class="flex items-start justify-between gap-2">
+              <h5 class="font-bold text-sm sm:text-base text-slate-900">${qIdx + 1}. ${qObj.q}</h5>
+              ${hasAnswered ? `<span class="px-2.5 py-0.5 rounded-full text-xs font-bold shrink-0 ${isCorrect ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}">${isCorrect ? "✓ Tepat" : "✕ Kurang Tepat"}</span>` : ""}
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              ${qObj.options.map((opt, oIdx) => {
+                let btnStyle = "bg-white border-slate-200 hover:border-indigo-400 text-slate-700";
+                if (hasAnswered) {
+                  if (oIdx === qObj.ans) btnStyle = "bg-emerald-50 border-emerald-500 text-emerald-900 font-bold ring-1 ring-emerald-500";
+                  else if (oIdx === chosen) btnStyle = "bg-rose-50 border-rose-500 text-rose-900 font-semibold";
+                  else btnStyle = "bg-white border-slate-200 text-slate-400";
+                }
+                return `
+                  <button onclick="answerQuiz(${m.id}, ${qIdx}, ${oIdx})" class="text-left text-xs sm:text-sm p-3 rounded-xl border transition ${btnStyle}">
+                    <span class="font-mono font-bold mr-1.5">${String.fromCharCode(65 + oIdx)}.</span> ${escapeHtml(opt)}
+                  </button>
+                `;
+              }).join("")}
+            </div>
+            ${hasAnswered ? `
+              <div class="text-xs sm:text-sm p-3 rounded-xl ${isCorrect ? "bg-emerald-100/70 text-emerald-950 border border-emerald-200" : "bg-amber-50 text-amber-950 border border-amber-200"}">
+                <strong>Pembahasan:</strong> ${qObj.exp}
+              </div>
+            ` : ""}
+          </div>
+        `;
+      }).join("");
+
+      container.innerHTML = `
+        <!-- MODULE HERO HEADER -->
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <span class="px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-100">
+              Modul ${m.id} dari 9 • ${m.badge}
+            </span>
+            <button onclick="markModuleComplete(${m.id})" class="px-4 py-1.5 rounded-xl text-xs font-bold border transition ${
+              isDone
+                ? "bg-emerald-600 text-white border-emerald-600"
+                : "bg-white hover:bg-slate-50 text-slate-700 border-slate-300"
+            }">
+              ${isDone ? "✓ Modul Selesai" : "Tandai Selesai"}
+            </button>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3">${m.title}</h2>
+          <p class="text-sm sm:text-base text-slate-600 leading-relaxed mb-4">${m.summary}</p>
+          <div class="flex flex-wrap gap-1.5">
+            ${m.topics.map(t => `<span class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700">• ${t}</span>`).join("")}
+          </div>
+        </div>
+
+        <!-- INTERACTIVE VISUAL DIAGRAM SECTION -->
+        <section>
+          ${m.visualWidgetHTML}
+        </section>
+
+        <!-- DETAILED THEORY & CODE EXAMPLES -->
+        <section class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm">
+          <div class="flex items-center gap-2 border-b border-slate-100 pb-4 mb-6">
+            <span class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">📘</span>
+            <h3 class="text-xl font-extrabold text-slate-900">Materi Mendalam & Contoh Kode</h3>
+          </div>
+          ${m.lessonHTML}
+        </section>
+
+        <!-- INTERACTIVE PYTHON SANDBOX & CODING CHALLENGE -->
+        <section class="bg-slate-900 text-white rounded-3xl border border-slate-800 p-6 sm:p-8 shadow-lg space-y-6">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+            <div>
+              <span class="text-xs font-extrabold uppercase tracking-wider text-cyan-400">Live Python Playground</span>
+              <h3 class="text-xl font-extrabold text-white">Sandbox Eksekusi Kode & Tantangan Praktik</h3>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="loadChallengeToSandbox(${m.id})" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs transition">
+                Muat Soal Tantangan
+              </button>
+              <button onclick="resetSandbox(${m.id})" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition">
+                Reset Contoh
+              </button>
+            </div>
+          </div>
+
+          <!-- Challenge Banner -->
+          <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="text-xs sm:text-sm text-slate-200">
+              <span class="inline-block px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-xs mr-1.5">Tantangan Kode</span>
+              ${m.challenge.instruction}
+            </div>
+            ${challengeCompleted[m.id] ? `<span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold shrink-0">✓ Tantangan Lulus (+20 Poin)</span>` : ""}
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Code Editor -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-xs text-slate-400 font-mono">
+                <span>main.py</span>
+                <span>Edit & klik Jalankan</span>
+              </div>
+              <textarea id="sandboxEditor" rows="10" spellcheck="false" class="code-editor w-full bg-slate-950 text-emerald-300 p-4 rounded-2xl border border-slate-700 focus:border-cyan-500 outline-none text-xs sm:text-sm leading-relaxed">${escapeHtml(m.sandboxDefault)}</textarea>
+              <div class="flex flex-wrap gap-2">
+                <button onclick="runSandbox(${m.id}, false)" class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs sm:text-sm transition shadow">
+                  ▶ Jalankan Kode
+                </button>
+                <button onclick="runSandbox(${m.id}, true)" class="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-xs sm:text-sm transition shadow">
+                  ✓ Periksa Jawaban Tantangan
+                </button>
+              </div>
+            </div>
+
+            <!-- Console Output -->
+            <div class="space-y-2 flex flex-col">
+              <div class="flex items-center justify-between text-xs text-slate-400 font-mono">
+                <span>Console Output</span>
+                <button onclick="document.getElementById('sandboxOutput').textContent='Siap menjalankan kode...'" class="hover:text-white">Bersihkan</button>
+              </div>
+              <pre id="sandboxOutput" class="flex-1 min-h-[220px] bg-black/70 text-slate-100 p-4 rounded-2xl border border-slate-800 text-xs sm:text-sm font-mono whitespace-pre-wrap overflow-x-auto">Klik "Jalankan Kode" untuk melihat output Python...</pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- INTERACTIVE QUIZ SECTION -->
+        <section class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-5">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-sm">?</span>
+              <div>
+                <h3 class="text-xl font-extrabold text-slate-900">Kuis Pemahaman Modul ${m.id}</h3>
+                <p class="text-xs text-slate-500">Pilih jawaban untuk melihat evaluasi & pembahasan langsung (+10 poin per soal benar)</p>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-4">
+            ${quizHTML}
+          </div>
+        </section>
+
+        <!-- PREV / NEXT MODULE NAVIGATION -->
+        <div class="flex items-center justify-between pt-2 pb-8">
+          <button onclick="selectModule(${Math.max(1, m.id - 1)})" ${m.id === 1 ? "disabled" : ""} class="px-5 py-3 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-sm disabled:opacity-40 transition">
+            ← Modul Sebelumnya
+          </button>
+          <button onclick="selectModule(${Math.min(9, m.id + 1)})" ${m.id === 9 ? "disabled" : ""} class="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm disabled:opacity-40 transition shadow-sm">
+            Modul Berikutnya →
+          </button>
+        </div>
+      `;
+
+      // Initialize dynamic visualizers specific to active module
+      if (m.id === 1) updateM1Visual();
+      if (m.id === 2) updateM2Visual();
+      if (m.id === 3) setLoopMode("normal");
+      if (m.id === 5) highlightSlice(0, 4);
+      if (m.id === 6) renderM6List();
+      if (m.id === 7) renderRecursionStack(4);
+      if (m.id === 8) resetSortViz();
+      if (m.id === 9) runSearchViz();
+    }
+
+    // =========================================================================
+    // 5. MODULE-SPECIFIC VISUALIZER CONTROLLERS
+    // =========================================================================
+    // Module 1 Visual
+    function updateM1Visual() {
+      const rawEl = document.getElementById("m1SimInput");
+      if (!rawEl) return;
+      const raw = rawEl.value.trim() || "0";
+      document.getElementById("m1BoxRaw").textContent = `"${raw}"`;
+      const parsed = parseInt(raw, 10);
+      if (isNaN(parsed)) {
+        document.getElementById("m1BoxInt").textContent = "ValueError!";
+        document.getElementById("m1BoxType").textContent = "Gagal konversi";
+        document.getElementById("m1BoxOut").textContent = "Error: Bukan angka";
+      } else {
+        document.getElementById("m1BoxInt").textContent = parsed;
+        document.getElementById("m1BoxType").textContent = "type: int";
+        document.getElementById("m1BoxOut").textContent = `5 thn lagi: ${parsed + 5}`;
+      }
+    }
+
+    // Module 2 Visual
+    function updateM2Visual() {
+      const slider = document.getElementById("m2ScoreSlider");
+      if (!slider) return;
+      const val = Number(slider.value);
+      document.getElementById("m2ScoreVal").textContent = val;
+
+      const n1 = document.getElementById("m2Node1");
+      const n2 = document.getElementById("m2Node2");
+      const n3 = document.getElementById("m2Node3");
+      const r1 = document.getElementById("m2Res1");
+      const r2 = document.getElementById("m2Res2");
+      const r3 = document.getElementById("m2Res3");
+      const bar = document.getElementById("m2ExplainBar");
+
+      [n1, n2, n3].forEach(n => { n.setAttribute("fill", "#f1f5f9"); n.setAttribute("stroke", "#94a3b8"); });
+      r1.textContent = "Predikat: A"; r1.setAttribute("fill", "#64748b");
+      r2.textContent = "Predikat: B"; r2.setAttribute("fill", "#64748b");
+      r3.textContent = "Predikat: C"; r3.setAttribute("fill", "#64748b");
+
+      if (val >= 85) {
+        n1.setAttribute("fill", "#dcfce7"); n1.setAttribute("stroke", "#16a34a");
+        r1.textContent = "Predikat: A (AKTIF)"; r1.setAttribute("fill", "#15803d");
+        bar.textContent = `${val} >= 85 (True) → Eksekusi blok A dan langsung lewati elif & else!`;
+      } else if (val >= 70) {
+        n2.setAttribute("fill", "#dcfce7"); n2.setAttribute("stroke", "#16a34a");
+        r2.textContent = "Predikat: B (AKTIF)"; r2.setAttribute("fill", "#15803d");
+        bar.textContent = `${val} >= 85 (False) → cek elif ${val} >= 70 (True) → Eksekusi blok B!`;
+      } else {
+        n3.setAttribute("fill", "#fef3c7"); n3.setAttribute("stroke", "#d97706");
+        r3.textContent = "Predikat: C (AKTIF)"; r3.setAttribute("fill", "#b45309");
+        bar.textContent = `${val} >= 85 (False) → ${val} >= 70 (False) → Masuk blok default else (C)!`;
+      }
+    }
+
+    // Module 3 Visual
+    function setLoopMode(mode) {
+      const box = document.getElementById("m3LoopBoxes");
+      const cap = document.getElementById("m3LoopCaption");
+      if (!box) return;
+      const nums = [1, 2, 3, 4, 5, 6];
+      box.innerHTML = nums.map(n => {
+        let status = "Dicetak";
+        let cls = "bg-emerald-50 border-emerald-400 text-emerald-900";
+        if (mode === "continue" && n === 3) {
+          status = "Dilewati";
+          cls = "bg-amber-100 border-amber-500 text-amber-900";
+        } else if (mode === "break" && n === 4) {
+          status = "STOP!";
+          cls = "bg-rose-100 border-rose-500 text-rose-900";
+        } else if (mode === "break" && n > 4) {
+          status = "Tak Tersentuh";
+          cls = "bg-slate-100 border-slate-300 text-slate-400 opacity-60";
+        }
+        return `
+          <div class="p-2.5 rounded-xl border-2 text-center ${cls}">
+            <div class="font-mono font-extrabold text-base">i = ${n}</div>
+            <div class="text-[11px] font-bold mt-0.5">${status}</div>
+          </div>
+        `;
+      }).join("");
+
+      if (mode === "normal") cap.textContent = "Mode Normal: Semua angka dari 1 sampai 6 dicetak berurutan.";
+      if (mode === "continue") cap.textContent = "Mode continue (if i == 3: continue): Angka 3 dilewati, lalu loop tetap melanjutkan 4, 5, dan 6.";
+      if (mode === "break") cap.textContent = "Mode break (if i == 4: break): Begitu mencapai angka 4, seluruh loop berhenti total sehingga 5 dan 6 tidak pernah dijalankan.";
+    }
+
+    // Module 5 Visual
+    function highlightSlice(start, stop) {
+      const box = document.getElementById("m5StringBoxes");
+      const res = document.getElementById("m5SliceResult");
+      if (!box) return;
+      const word = "CODEBATTLE";
+      box.innerHTML = word.split("").map((ch, idx) => {
+        const active = idx >= start && idx < stop;
+        return `
+          <div class="rounded-xl border p-1.5 ${active ? "bg-amber-100 border-amber-500 ring-1 ring-amber-400" : "bg-white border-slate-200"}">
+            <div class="text-[10px] font-mono text-indigo-600 font-bold">${idx}</div>
+            <div class="font-mono font-extrabold text-sm sm:text-base text-slate-900 my-0.5">${ch}</div>
+            <div class="text-[10px] font-mono text-rose-500 font-bold">${idx - word.length}</div>
+          </div>
+        `;
+      }).join("");
+      res.textContent = `s[${start}:${stop}] → "${word.slice(start, stop)}"`;
+    }
+
+    // Module 6 Visual
+    let m6Items = [10, 25, 40, 75];
+    function renderM6List() {
+      const box = document.getElementById("m6ListVisual");
+      const log = document.getElementById("m6ListLog");
+      if (!box) return;
+      box.innerHTML = m6Items.map((val, idx) => `
+        <div class="bg-white border-2 border-teal-400 rounded-xl px-4 py-2 text-center shadow-xs">
+          <div class="text-[10px] font-mono font-bold text-teal-600">index [${idx}]</div>
+          <div class="font-mono font-extrabold text-base text-slate-900">${val}</div>
+        </div>
+      `).join("");
+      log.textContent = `nilai = [${m6Items.join(", ")}] | len(nilai) = ${m6Items.length}`;
+    }
+
+    function m6ListAction(act) {
+      if (act === "append") m6Items.push(99);
+      if (act === "insert") m6Items.splice(1, 0, 50);
+      if (act === "pop" && m6Items.length > 0) m6Items.pop();
+      if (act === "reset") m6Items = [10, 25, 40, 75];
+      renderM6List();
+    }
+
+    // Module 7 Visual
+    function renderRecursionStack(n) {
+      const box = document.getElementById("m7StackContainer");
+      if (!box) return;
+      let frames = [];
+      for (let i = n; i >= 1; i--) {
+        let fact = 1;
+        for (let k = 1; k <= i; k++) fact *= k;
+        frames.push(`
+          <div class="flex items-center justify-between p-3 rounded-xl border ${i === 1 ? "bg-emerald-50 border-emerald-400" : "bg-white border-rose-200"}">
+            <div class="font-mono text-xs sm:text-sm font-bold text-slate-800">
+              ${i === 1 ? `faktorial(1) → Base Case tercapai!` : `faktorial(${i}) menunggu ${i} × faktorial(${i - 1})`}
+            </div>
+            <span class="font-mono text-xs font-extrabold px-2.5 py-1 rounded-lg ${i === 1 ? "bg-emerald-600 text-white" : "bg-rose-100 text-rose-800"}">
+              return ${fact}
+            </span>
+          </div>
+        `);
+      }
+      box.innerHTML = frames.join("");
+    }
+
+    // Module 8 Sorting Visual
+    let sortArr = [45, 18, 72, 29, 60, 12];
+    let sortStepIdx = 0;
+    function resetSortViz() {
+      sortArr = [45, 18, 72, 29, 60, 12].sort(() => Math.random() - 0.5);
+      sortStepIdx = 0;
+      renderSortBars(sortArr, [], "Array acak siap diurutkan. Klik 'Langkah Berikutnya'.");
+    }
+
+    function renderSortBars(arr, activeIndices, statusText) {
+      const box = document.getElementById("m8BarsContainer");
+      const status = document.getElementById("m8SortStatus");
+      if (!box) return;
+      box.innerHTML = arr.map((val, idx) => {
+        const isHighlight = activeIndices.includes(idx);
+        return `
+          <div class="flex flex-col items-center gap-1.5">
+            <span class="font-mono text-xs font-extrabold text-slate-700">${val}</span>
+            <div class="algo-bar w-9 sm:w-11 rounded-t-xl ${isHighlight ? "bg-amber-500" : "bg-blue-600"}" style="height: ${Math.max(24, val * 1.3)}px"></div>
+          </div>
+        `;
+      }).join("");
+      status.textContent = statusText;
+    }
+
+    function stepSortViz() {
+      const algo = document.getElementById("m8AlgoSelect").value;
+      const n = sortArr.length;
+      if (algo === "bubble") {
+        let swapped = false;
+        for (let j = 0; j < n - 1; j++) {
+          if (sortArr[j] > sortArr[j + 1]) {
+            [sortArr[j], sortArr[j + 1]] = [sortArr[j + 1], sortArr[j]];
+            renderSortBars(sortArr, [j, j + 1], `Bubble Sort: Menukar ${sortArr[j + 1]} dan ${sortArr[j]} karena posisi kiri > kanan.`);
+            swapped = true;
+            break;
+          }
+        }
+        if (!swapped) renderSortBars(sortArr, [], "Selesai! Seluruh array sudah terurut sempurna.");
+      } else if (algo === "insertion") {
+        sortStepIdx = Math.min(sortStepIdx + 1, n - 1);
+        let key = sortArr[sortStepIdx];
+        let j = sortStepIdx - 1;
+        while (j >= 0 && key < sortArr[j]) {
+          sortArr[j + 1] = sortArr[j];
+          j--;
+        }
+        sortArr[j + 1] = key;
+        renderSortBars(sortArr, [j + 1], `Insertion Sort: Menyisipkan elemen ${key} ke posisi terurut di sebelah kiri.`);
+      } else {
+        sortArr.sort((a, b) => a - b);
+        renderSortBars(sortArr, [0, 1, 2, 3, 4, 5], "Merge Sort: Membagi dua sub-array dan menggabungkannya kembali secara terurut O(n log n)!");
+      }
+    }
+
+    // Module 9 Searching Visual
+    function runSearchViz() {
+      const box = document.getElementById("m9SearchBoxes");
+      const stats = document.getElementById("m9SearchStats");
+      const sel = document.getElementById("m9TargetSelect");
+      if (!box || !sel) return;
+
+      const arr = [5, 12, 19, 24, 31, 38, 45, 52, 67, 74, 88, 95];
+      const target = Number(sel.value);
+
+      // Linear trace
+      let linearSteps = 0;
+      for (let i = 0; i < arr.length; i++) {
+        linearSteps++;
+        if (arr[i] === target) break;
+      }
+
+      // Binary trace
+      let low = 0, high = arr.length - 1, binaryVisited = [];
+      while (low <= high) {
+        const mid = Math.floor((low + high) / 2);
+        binaryVisited.push(mid);
+        if (arr[mid] === target) break;
+        else if (arr[mid] < target) low = mid + 1;
+        else high = mid - 1;
+      }
+
+      box.innerHTML = arr.map((val, idx) => {
+        const isFound = val === target;
+        const isBinChecked = binaryVisited.includes(idx);
+        let cls = "bg-white border-slate-200 text-slate-700";
+        if (isFound) cls = "bg-emerald-500 border-emerald-600 text-white font-extrabold ring-2 ring-emerald-300";
+        else if (isBinChecked) cls = "bg-cyan-100 border-cyan-500 text-cyan-950 font-bold";
+        return `
+          <div class="p-2 rounded-xl border ${cls}">
+            <div class="text-[9px] font-mono opacity-75">[${idx}]</div>
+            <div class="font-mono text-xs sm:text-sm">${val}</div>
+          </div>
+        `;
+      }).join("");
+
+      stats.innerHTML = `
+        <div class="bg-white border border-slate-200 rounded-xl p-3">
+          <div class="font-bold text-slate-800">Linear Search</div>
+          <div class="text-slate-600 mt-0.5">Memeriksa dari indeks 0 satu per satu: <strong class="text-rose-600">${linearSteps} langkah</strong></div>
+        </div>
+        <div class="bg-white border border-cyan-300 rounded-xl p-3">
+          <div class="font-bold text-cyan-800">Binary Search</div>
+          <div class="text-slate-600 mt-0.5">Melompat via titik tengah (kotak biru): <strong class="text-emerald-600">${binaryVisited.length} langkah</strong></div>
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // 6. SANDBOX & QUIZ HANDLERS
+    // =========================================================================
+    function loadChallengeToSandbox(modId) {
+      const m = MODULES.find(item => item.id === modId);
+      document.getElementById("sandboxEditor").value = m.challenge.starter;
+      document.getElementById("sandboxOutput").textContent = "Soal tantangan dimuat! Lengkapi kode lalu klik 'Periksa Jawaban Tantangan'.";
+      showToast("Soal tantangan dimuat ke editor.");
+    }
+
+    function resetSandbox(modId) {
+      const m = MODULES.find(item => item.id === modId);
+      document.getElementById("sandboxEditor").value = m.sandboxDefault;
+      document.getElementById("sandboxOutput").textContent = "Editor dikembalikan ke contoh awal.";
+    }
+
+    async function runSandbox(modId, isCheckChallenge) {
+      const m = MODULES.find(item => item.id === modId);
+      const code = document.getElementById("sandboxEditor").value;
+      const outEl = document.getElementById("sandboxOutput");
+      outEl.textContent = "Menjalankan kode Python...";
+
+      const res = await executePythonCode(code, ["10", "5"]);
+      if (res.error) {
+        outEl.textContent = "❌ Error:\n" + res.error;
+        return;
+      }
+
+      const cleanOut = res.output.trim();
+      outEl.textContent = cleanOut || "(Program selesai tanpa output print)";
+
+      if (isCheckChallenge) {
+        const expected = m.challenge.expectedOutput.trim();
+        if (cleanOut === expected || cleanOut.endsWith(expected)) {
+          challengeCompleted[modId] = true;
+          completedModules.add(modId);
+          updateGlobalStats();
+          renderSidebar();
+          showToast("🎉 Luar biasa! Tantangan kode berhasil diselesaikan!");
+          outEl.textContent += `\n\n✅ LULUS TANTANGAN! Output sesuai (${expected}).`;
+        } else {
+          showToast(`Output belum sesuai. Diharapkan: ${expected}`, true);
+          outEl.textContent += `\n\n⚠️ Belum tepat. Output yang diharapkan: ${expected}`;
+        }
+      }
+    }
+
+    function answerQuiz(modId, qIdx, optIdx) {
+      const key = `${modId}_${qIdx}`;
+      quizAnswersState[key] = optIdx;
+      const m = MODULES.find(item => item.id === modId);
+      const allAnswered = m.quiz.every((_, idx) => quizAnswersState[`${modId}_${idx}`] !== undefined);
+      if (allAnswered) {
+        completedModules.add(modId);
+      }
+      updateGlobalStats();
+      renderSidebar();
+      renderActiveModule();
+    }
+
+    // Boot application
+    renderSidebar();
+    renderActiveModule();
+    updateGlobalStats();
+  </script>
+</body>
+</html>
